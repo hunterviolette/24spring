@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 from keras.models import Model, load_model
 from keras.layers import Input, Conv2D, MaxPooling2D, UpSampling2D
 from keras.preprocessing.image import ImageDataGenerator, img_to_array, load_img
+from pathlib import Path
 
 class Schmoo:
   def __init__(self) -> None:
@@ -63,6 +64,9 @@ class Schmoo:
     self.model.save(self.model_path)
 
   def Test_Model(self, imagePath: str = './val/image.jpg'):
+    if not Path(self.model_path).exists():
+      Schmoo.Train_Model
+
     model = load_model(self.model_path)
 
     img = load_img(imagePath, target_size=(256, 256))
