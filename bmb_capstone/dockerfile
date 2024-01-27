@@ -1,0 +1,11 @@
+FROM ubuntu:22.04
+
+WORKDIR /root
+
+COPY ./requirements.txt ./
+RUN apt-get update && \
+    apt-get install -y tmux vim htop \  
+                    python3.10 python3-pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+COPY ./src ./
