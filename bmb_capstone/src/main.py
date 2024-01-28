@@ -123,45 +123,6 @@ class Schmoo:
                     Schmoo.ExportMask(images_test[i], masks, flows, file_test[i][1], model_name)
                     if debug: break
         
-    def TestModels(self, image_channels: list[int] = [2,1]):
-        images_test, masks_test, file_test = Schmoo.DataGenerator(self, './data/test')
-
-        for i, x in enumerate(listdir(self.model_dir)):
-            modelName = f"{self.model_dir}/{x}"
-
-            print(i, modelName)
-            if not x in listdir(self.model_dir):
-                model = models.Cellpose(model_type=modelName,
-                                        gpu=self.gpu,
-                                        )
-                
-                print(f'Opened model: {modelName}')
-
-                masks, flows, styles, diams = model.eval(images_test[0],
-                                                        channels=image_channels,
-                                            )
-            else:
-                model = models.CellposeModel(pretrained_model=modelName,
-                                            gpu=self.gpu,
-                                        )
-                
-                print(f'Opened model: {modelName}')
-
-                masks, flows, styles = model.eval(images_test[0],
-                                                channels=image_channels,
-                                            )
-            io.save_masks(
-                    images=images_test[0], 
-                    masks=masks, 
-                    flows=flows, 
-                    file_names=f"{file_test[i][1]}",
-                    #savedir=f"./masks/{modelName.replace('./models/','')}"
-                    savedir=abspath(f"./masks/{modelName.replace('./models/','')}")
-                )
-            
-            print(masks.mean())
-            print(f"Saved output to ./masks/{modelName.replace('./models/','')}/{file_test[i][1]}")
-        
 if __name__ == "__main__":
     x = Schmoo()
     dataGen, train, test = False, False, True
