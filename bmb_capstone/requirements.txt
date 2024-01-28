@@ -1,3 +1,4 @@
 cellpose
 cellpose[gui]
 tifffile
+PyQt5

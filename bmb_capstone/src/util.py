@@ -59,7 +59,15 @@ class Preprocessing:
           sep='\n')
       break
 
+  @staticmethod
+  def TorchGPU():
+    import torch
+
+    print("CUDA availability:", torch.cuda.is_available())
+    print("CUDA version:", torch.version.cuda)
+
 if __name__ == "__main__":
   x = Preprocessing()
-  x.VerifyFiles()
-  x.ImageShape()
+  #x.VerifyFiles()
+  #x.ImageShape()
+  x.TorchGPU()
