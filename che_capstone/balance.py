@@ -59,6 +59,20 @@ class Balanace:
       print(f'=== Mass Flows ===')
       for x in self.mass_flow.keys():
         print(f"{x} {self.mass_flow[x].__round__(2)}")
+        
+  def N_V_Flow(self):
+    Balanace.MassFlow(self)
+    
+    # PV = nRT
+    p = q(1, 'atm')
+    t = q(0, 'degC').to('degK')
+    r = q(8.3144621, 'J/mol/degK')
+    nDot = self.mol_flow["H2"]
+    
+    vDot = (nDot * r * t / p).to('m**3/h')
+    
+    print(vDot)
+    
 
 if __name__ == "__main__":
-  Balanace(verbose=True).MassFlow()
+  Balanace(verbose=False).N_V_Flow()
