@@ -11,7 +11,7 @@ class Preprocessing:
     self.export_dir = export_dir
 
   def CleanFileNames(self,
-                import_dir: str = './imageLoad/training', # import directory abs path
+                import_dir: str = './imageLoad', # import directory abs path
               ):
     
     eFiles = os.listdir(self.export_dir)
