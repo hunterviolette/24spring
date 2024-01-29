@@ -54,7 +54,7 @@ class Schmoo:
                     ])
 
         print(f'=== init training model: {name} ===')
-        model = models.CellposeModel(gpu=False,
+        model = models.CellposeModel(gpu=self.gpu,
                                     model_type=model_type,
                                 )
         
