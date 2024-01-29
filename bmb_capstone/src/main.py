@@ -39,6 +39,7 @@ class Schmoo:
                 min_train_masks: int = 0,
                 rescale: bool = True,
                 normalize: bool = True,
+                diam_mean: float = 30
             ):
 
         print('=== init data generator ===')
@@ -56,6 +57,7 @@ class Schmoo:
         print(f'=== init training model: {name} ===')
         model = models.CellposeModel(gpu=self.gpu,
                                     model_type=model_type,
+                                    diam_mean=diam_mean
                                 )
         
         model.train(train_data=images_train, 
@@ -110,11 +112,11 @@ class Schmoo:
                 print(f'Opened model: {model_name}')
 
                 for i,x in enumerate(images_test):
-                    masks, flows, styles = model.eval(images_test[0],
+                    masks, flows, styles = model.eval(x,
                                                     channels=image_channels,
                                                     rescale=True,
                                                 )
-                    Schmoo.ExportMask(images_test[i], masks, flows, file_test[i][1], model_name)
+                    Schmoo.ExportMask(x, masks, flows, file_test[i][1], model_name)
                     if debug: break
 
         
