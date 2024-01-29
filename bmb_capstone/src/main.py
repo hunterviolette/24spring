@@ -9,12 +9,14 @@ class Schmoo:
     
     def __init__(self, 
                 useGpu: bool = True,
-                model_dir: str = './models'
+                model_dir: str = './models',
+                diam_mean: float = 30
                 ) -> None:
         
         self.timeStart = time()
         self.gpu = useGpu        
         self.model_dir = model_dir
+        self.diam_mean = diam_mean
     
     def DataGenerator(self, directory: str = './data/training'):
         data, data_labels, names = [], [], []
@@ -39,7 +41,6 @@ class Schmoo:
                 min_train_masks: int = 0,
                 rescale: bool = True,
                 normalize: bool = True,
-                diam_mean: float = 30
             ):
 
         print('=== init data generator ===')
@@ -57,7 +58,7 @@ class Schmoo:
         print(f'=== init training model: {name} ===')
         model = models.CellposeModel(gpu=self.gpu,
                                     model_type=model_type,
-                                    diam_mean=diam_mean
+                                    diam_mean=self.diam_mean
                                 )
         
         model.train(train_data=images_train, 
@@ -108,6 +109,7 @@ class Schmoo:
                 
                 model = models.CellposeModel(pretrained_model=f"{self.model_dir}/{model_name}",
                                             gpu=self.gpu,
+                                            diam_mean=self.diam_mean
                                         )
                 print(f'Opened model: {model_name}')
 
