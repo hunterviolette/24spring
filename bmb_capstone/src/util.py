@@ -52,7 +52,7 @@ class Preprocessing:
   def ImageShape(self):
     for file in os.listdir(self.export_dir):
       img = imread(f"{self.export_dir}/{file}")
-      
+
       print(f"Array:", img, 
             f"Shape:{img.shape}", 
             F"Channels: {img.ndim}", 
@@ -67,7 +67,9 @@ class Preprocessing:
     print("CUDA version:", torch.version.cuda)
 
 if __name__ == "__main__":
+  loadFiles = False
+
   x = Preprocessing()
-  #x.VerifyFiles()
-  #x.ImageShape()
+  if loadFiles: x.VerifyFiles()
+  x.ImageShape()
   x.TorchGPU()

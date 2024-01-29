@@ -26,17 +26,19 @@ class Schmoo:
 
         assert len(data) == len(data_labels)
         
-        print(f"img len: {len(data)}", f"mask len: {len(data_labels)}", sep='\n')
+        print(f"img len: {len(data)}, mask len: {len(data_labels)}")
         return data, data_labels, names
 
     def TrainModel(self,
                 model_type: str = 'cyto',
-                image_channels: list[int] = [2,1],
-                learning_rate: float = .1,
-                weight_decay: float = .0001,
+                image_channels: list[int] = [0,0], # gray scale images
+                learning_rate: float = .2,
+                weight_decay: float = .00001,
                 n_epochs: int  = 100, 
                 save_every: int = 10, # save after amount of epochs
-                min_train_masks: int = 0
+                min_train_masks: int = 0,
+                rescale: bool = True,
+                normalize: bool = True,
             ):
 
         print('=== init data generator ===')
@@ -47,7 +49,8 @@ class Schmoo:
         name = "_".join([model_type,
                         f"lr{int(learning_rate*100)}",
                         f"wd{int(learning_rate*100000)}",
-                        f"ep{n_epochs}"
+                        f"ep{n_epochs}", 
+                        str(time()).split('.')[1]
                     ])
 
         print(f'=== init training model: {name} ===')
@@ -63,6 +66,8 @@ class Schmoo:
                     learning_rate=learning_rate, 
                     weight_decay=weight_decay, 
                     n_epochs=n_epochs,
+                    normalize=normalize,
+                    rescale=rescale,
                     #save_every=save_every,
                     min_train_masks=min_train_masks,
                     save_path='./',
@@ -88,7 +93,7 @@ class Schmoo:
 
     def TestModel(self,
                 model_name: str = None,
-                image_channels: list[int] = [2,1],
+                image_channels: list[int] = [0,0],
                 debug: bool = False
             ):
         
@@ -107,25 +112,15 @@ class Schmoo:
                 for i,x in enumerate(images_test):
                     masks, flows, styles = model.eval(images_test[0],
                                                     channels=image_channels,
+                                                    rescale=True,
                                                 )
                     Schmoo.ExportMask(images_test[i], masks, flows, file_test[i][1], model_name)
                     if debug: break
-            else:
-                model = models.Cellpose(model_type=model_name,
-                                        gpu=self.gpu,
-                                    )
-                print(f'Opened model: {model_name}')
 
-                for i,x in enumerate(images_test):
-                    masks, flows, styles, diams = model.eval(images_test[i],
-                                                            channels=image_channels,
-                                                )
-                    Schmoo.ExportMask(images_test[i], masks, flows, file_test[i][1], model_name)
-                    if debug: break
         
 if __name__ == "__main__":
     x = Schmoo()
-    dataGen, train, test = False, False, True
+    dataGen, train, test = False, True, False
 
     if dataGen:
         data, data_labels, names = x.DataGenerator()
@@ -136,4 +131,4 @@ if __name__ == "__main__":
         )
     
     if train: x.TrainModel()
-    if test: x.TestModel(model_name='cyto2torch_0')
+    if test: x.TestModel(model_name='cyto_lr20_wd20000_ep100')
