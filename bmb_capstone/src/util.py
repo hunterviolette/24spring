@@ -1,8 +1,4 @@
 from tifffile import imread, imwrite
-
-#from cellpose.models import Cellpose, CellposeModel
-#from cellpose.plot import mask_overlay
-#import cellpose
 import os 
 
 class Preprocessing:
