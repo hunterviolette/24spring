@@ -1,5 +1,8 @@
 from tifffile import imread, imwrite
+import numpy as np
 import os 
+from skimage.io import imread as pngRead
+from scipy.ndimage import label 
 
 class Preprocessing:
 
@@ -24,14 +27,15 @@ class Preprocessing:
             ).replace("groundtruth", "remove"
             ).replace("dict", ""
             ).replace("dic", "")
-            
-        if "remove" in name: name = name.replace(".", "_mask."
-                                        ).replace("remove", "")
-            
-        imwrite(
-          f'{self.export_dir}/{name}',
-          imread(f"{import_dir}/{file}")  
-        )
+        
+        img = imread(f"{import_dir}/{file}") 
+
+        if "remove" in name: 
+          name = name.replace(".", "_mask.").replace("remove", "")
+          img[(img > 1) & (img <= 255)] = 1
+          img, features = label(img) 
+
+        imwrite(f'{self.export_dir}/{name}', img)
       
     print(f"saved {filesAdded} files to ./data")
   
@@ -46,14 +50,22 @@ class Preprocessing:
       except: raise Exception(f"file: {x} is missing counterpart file")
 
   def ImageShape(self):
-    for file in os.listdir(self.export_dir):
-      img = imread(f"{self.export_dir}/{file}")
+    #np.set_printoptions(threshold=np.inf)
 
-      print(f"Array:", img, 
-            f"Shape:{img.shape}", 
-            F"Channels: {img.ndim}", 
-          sep='\n')
-      break
+    for file in os.listdir(self.export_dir):
+      if file in ["kelley_mask.tif"]:
+        if "png" in file: img = pngRead(f"{self.export_dir}/{file}")
+
+        else: 
+          img = imread(f"{self.export_dir}/{file}")
+          img[(img > 1) & (img <= 255)] = 1
+          img, features = label(img)
+
+        print(f"Array:", img, 
+              f"Shape:{img.shape}", 
+              F"Channels: {img.ndim}", 
+            sep='\n')
+        break
 
   @staticmethod
   def TorchGPU():
@@ -63,9 +75,10 @@ class Preprocessing:
     print("CUDA version:", torch.version.cuda)
 
 if __name__ == "__main__":
-  loadFiles = False
+  loadFiles, shape, gpuEnabled = False, False, True
 
   x = Preprocessing()
   if loadFiles: x.VerifyFiles()
-  x.ImageShape()
-  x.TorchGPU()
+  if shape: x.ImageShape()
+  if gpuEnabled: x.TorchGPU()
+

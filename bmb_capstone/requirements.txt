@@ -2,3 +2,5 @@ cellpose
 cellpose[gui]
 tifffile
 PyQt5
+scipy==1.12.0
+scikit-image==0.18.3

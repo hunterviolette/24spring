@@ -124,7 +124,7 @@ class Schmoo:
         
 if __name__ == "__main__":
     x = Schmoo()
-    dataGen, train, test = False, True, False
+    dataGen, train, test = False, False, True
 
     if dataGen:
         data, data_labels, names = x.DataGenerator()
@@ -135,4 +135,4 @@ if __name__ == "__main__":
         )
     
     if train: x.TrainModel()
-    if test: x.TestModel(model_name='cyto_lr20_wd20000_ep100')
+    if test: x.TestModel(model_name='cyto_lr20_wd20000_ep100_7559516')
