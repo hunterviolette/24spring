@@ -3,7 +3,7 @@ from dash import html, dcc
 import dash_bootstrap_components as dbc
 print("App starting")
 
-app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.SLATE])
+app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.SUPERHERO])
 server = app.server
 
 sidebar = dbc.Nav(

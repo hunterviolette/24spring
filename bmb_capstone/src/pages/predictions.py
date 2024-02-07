@@ -5,6 +5,7 @@ import plotly.graph_objects as go
 import plotly_express as px
 import dash_bootstrap_components as dbc
 from dash import dcc, html, Input, Output, callback, State, dash_table, register_page
+from typing import Optional
 
 if __name__ == '__main__':
     from util.core import Schmoo
@@ -17,7 +18,7 @@ register_page(__name__, suppress_callback_exceptions=True)
 
 class DashUtil:
   @staticmethod
-  def HTMLFormatting( className: str = 'heading', 
+  def Formatting( className: str = 'heading', 
                       color: str = 'info',
                       textAlign: str = 'center'
                     ):
@@ -25,7 +26,13 @@ class DashUtil:
     if className == 'heading':
       return f"bg-opacity-50 p-1 m-1 bg-{color} text-dark fw-bold rounded text-{textAlign}"
     
-    elif className == 'mdiv': return {"padding": "10px"}
+    elif className == 'mdiv': return {"padding": "10px"} # style not className
+
+    elif className == 'button': return f"btn btn-{color}"
+
+    elif className == 'input': return 'form-control'
+
+    elif className == 'textStyle': return {'text-align': 'center', 'color': 'black'} # style
     
     else: raise Exception("className not found")
 
@@ -43,31 +50,65 @@ class Predictions(DashUtil):
 
       dbc.Row([
         dbc.Col([
-            html.H4("Input Data Directory"),
-            dcc.Dropdown(id='dataDirs', options=os.listdir(Predictions.dataPath), multi=False),
+            html.H4("Input directory", style={'text-align': 'center'}),
+            html.Br(),
+            dcc.Dropdown(id='dataDirs', multi=False,
+                        style=Predictions.Formatting('textStyle'),
+                        options=os.listdir(Predictions.dataPath)
+                      ),
         ]),
         dbc.Col([
-            html.H4("Models"),
-            dcc.Dropdown(id='modelNames', options=os.listdir(Predictions.modelPath), multi=False),
+            html.H4("Models", style={'text-align': 'center'}),
+            html.Br(),
+            dcc.Dropdown(id='modelNames', multi=False,
+                        style=Predictions.Formatting('textStyle'),
+                        options=os.listdir(Predictions.modelPath)
+                      ),
         ]),
         dbc.Col([
-            html.H4("Diameter Mean"),
-            dcc.Input(id='diamMean', type='number', step='1', value=30),
+            html.H4("Save Images", style={'text-align': 'center'}),
+            html.Br(),
+            dcc.Dropdown(id='saveImage', multi=False,
+                style=Predictions.Formatting('textStyle'),
+                options=[
+                    {'label': 'True', 'value': True},
+                    {'label': 'False', 'value': False}
+                  ]
+                ),
         ]),
         dbc.Col([
-            html.H4("click to run predictions"),
-            html.Button("click here", id="makePredictions"),
+            html.H4("Diameter mean", style={'text-align': 'center'}),
+            html.Br(),
+            dcc.Input(id='diamMean', type='number', step='1', value=30, 
+                      className=Predictions.Formatting('input'),
+                      style=Predictions.Formatting('textStyle')
+                    ),
         ]),
+        dbc.Col([
+            html.H4("Max number of predictions", style={'text-align': 'center'}),
+            dcc.Input(id='numPredictions', type='number', value=None,
+                      className=Predictions.Formatting('input'),
+                      style=Predictions.Formatting('textStyle')
+                    ),
+        ]),
+        dbc.Col([
+            html.H4("Click for model predictions"),
+            html.Button("click here", n_clicks=0, id="makePredictions", 
+                        className=Predictions.Formatting('button', 'info')
+                      ),
+        ], className='text-center'),
       ], align='center'),
       html.Div(id='predictionDiv'),
 
-    ], style=Predictions.HTMLFormatting('mdiv'))
+    ], className='mb-4', style=Predictions.Formatting('mdiv'))
 
   def callbacks(self):
     @callback(
       [Output("dataDirs", 'value'),
       Output("modelNames", 'value'),
       Output("diamMean", 'value'),
+      Output("numPredictions", 'value'),
+      Output("saveImage", 'value'),
       Output('predictionDiv', 'children')
       ],
       Input("makePredictions", "n_clicks"),
@@ -75,12 +116,16 @@ class Predictions(DashUtil):
         State("dataDirs", "value"),
         State("modelNames", "value"),
         State("diamMean", "value"),
+        State("numPredictions", "value"),
+        State("saveImage", "value"),
       ],
     )
     def Predict(clicks: int, 
                 data_dir: str, 
                 model_name: str,
                 diam_mean: float,
+                numPredictions: Optional[int],
+                saveImage: bool,
               ):
       
       def TransparentImage(img, mask, 
@@ -103,23 +148,23 @@ class Predictions(DashUtil):
                             margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
                             height=450, width=650)
 
-      print(clicks, data_dir, model_name, diam_mean, sep=' ')
+      print(clicks, data_dir, model_name, diam_mean, numPredictions, saveImage, sep=' ')
+      mdiv = []
 
-      if clicks == None:
-        return (None, None, None)
       if clicks > 0: 
-        mdiv = []
         res = Schmoo(model_dir=Predictions.modelPath, 
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
                     diam_mean=diam_mean
-                  ).TestModel(model_name=model_name, debug=False)
+                  ).TestModel(model_name=model_name, 
+                              numPredictions=numPredictions,
+                              saveImages=saveImage
+                            )
         
-
         if isinstance(res, list):
           for re in res:
             mdiv.extend([
                 html.H3(f"Total cells found: {np.max(re[1])} for image: {re[2]}",
-                        className=Predictions.HTMLFormatting()),
+                        className=Predictions.Formatting()),
                 dbc.Row([
                     dbc.Col([
                         html.H4("Input image"),
@@ -139,9 +184,7 @@ class Predictions(DashUtil):
             ])
         
         print('plotting...')
-        return (data_dir, model_name, diam_mean, mdiv)
-      else: 
-        return (data_dir, model_name, diam_mean)
+      return (data_dir, model_name, diam_mean, numPredictions, saveImage, mdiv)
 
 x = Predictions()
 layout = x.layout()
