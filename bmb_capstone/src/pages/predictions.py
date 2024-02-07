@@ -13,7 +13,7 @@ else:
     from pages.util.core import Schmoo
     from pages.util.util import Preprocessing
 
-register_page(__name__, suppress_callback_exceptions=False)
+register_page(__name__, suppress_callback_exceptions=True)
 
 class Predictions():
 
@@ -69,13 +69,25 @@ class Predictions():
                 diam_mean: float,
               ):
       
-      def TransparentImage(img, mask):
+      def TransparentImage(img, mask, 
+                          colorscale: str = 'emrld',
+                          colorscale_interp: bool = False
+                        ):
         img, transparent_mask = img, mask.astype(float) 
         transparent_mask[transparent_mask == 0] = np.nan
-        return go.Heatmap(z=np.where(np.isnan(transparent_mask), 
+
+        if colorscale_interp: zmin, zmax = 0, np.max(mask)+10
+        else: zmin, zmax = None, None
+
+        return go.Figure(go.Heatmap(z=np.where(np.isnan(transparent_mask), 
                                     img, 
-                                    transparent_mask
-                      ))
+                                    transparent_mask), 
+                          zmin=zmin, 
+                          zmax=zmax,
+                          colorscale=colorscale
+                        )).update_layout(
+                            margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
+                            height=450, width=650)
 
       print(clicks, data_dir, model_name, diam_mean, sep=' ')
 
@@ -84,28 +96,27 @@ class Predictions():
       if clicks == 3: 
         mdiv = []
         res = Schmoo(model_dir=Predictions.modelPath, 
-              data_dir=f"{Predictions.dataPath}/{data_dir}",
-              diam_mean=diam_mean).TestModel(model_name=model_name, debug=True)
+                    data_dir=f"{Predictions.dataPath}/{data_dir}",
+                    diam_mean=diam_mean
+                  ).TestModel(model_name=model_name, debug=True)
         
+
         if isinstance(res, list):
           for re in res:
-            print('called')
-            mdiv.append(
+            mdiv.extend([
+                html.H3(f"Total cells found: {np.max(re[1])} for image: {re[2]}"),
                 dbc.Row([
                     dbc.Col([
-                        html.H4("Image"),
-                        dcc.Graph(figure=go.Figure(go.Heatmap(z=re[0]))),
-                    ], width=4),
+                        html.H4("Input image"),
+                        dcc.Graph(figure=TransparentImage(re[0], re[1]))
+                    ], width=6),
                     dbc.Col([
-                        html.H4("Mask"),
-                        dcc.Graph(figure=go.Figure(go.Heatmap(z=re[1]))),
-                    ], width=4), 
-                    dbc.Col([
-                        html.H4("Image + Transparent Mask"),
-                        dcc.Graph(figure=go.Figure(TransparentImage(re[0], re[1]))),
-                    ], width=4), 
+                        html.H4("Image with predicted mask overlay"),
+                        dcc.Graph(figure=TransparentImage(re[0], re[1], 'rdbu', True))
+
+                    ], width=6), 
                 ], align='justify'),
-            )
+            ])
         
         print('plotting...')
         return (data_dir, model_name, diam_mean, mdiv)
