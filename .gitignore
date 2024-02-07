@@ -3,5 +3,9 @@ __pycache__/
 **.pyc
 **.tif
 **.npy
-masks/
+predictions/
 models/
+.vscode/
+data/
+raw_data/
+t.py

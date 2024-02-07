@@ -60,19 +60,27 @@ class Balanace:
       for x in self.mass_flow.keys():
         print(f"{x} {self.mass_flow[x].__round__(2)}")
         
-  def N_V_Flow(self):
+  def NormalizedVdot(self):
     Balanace.MassFlow(self)
     
     # PV = nRT
     p = q(1, 'atm')
     t = q(0, 'degC').to('degK')
     r = q(8.3144621, 'J/mol/degK')
-    nDot = self.mol_flow["H2"]
-    
-    vDot = (nDot * r * t / p).to('m**3/h')
-    
-    print(vDot)
+  
+    self.normVdot = {}
+    for key in self.mol_flow.keys():
+      self.normVdot[key] = (self.mol_flow[key] * r * t / p
+                              ).to('m**3/h').__round__(2)
+
+    print(
+      f"Hydrogen: {self.normVdot['H2']}",
+      f"Nitrogen: {self.normVdot['N2']}",
+      f"Ammonia: {self.normVdot['NH3']}",
+      f"Ammonia Mass Flow: {self.mass_flow['NH3'].to('mtpd')}",
+      sep='\n'
+    )
     
 
 if __name__ == "__main__":
-  Balanace(verbose=False).N_V_Flow()
+  Balanace(verbose=False).NormalizedVdot()
