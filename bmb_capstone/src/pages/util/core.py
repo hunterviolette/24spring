@@ -31,21 +31,27 @@ class Schmoo:
     if not exists(dir_path): makedirs(dir_path)
     else: print(f"Directory: {dir_path} exists")
   
-  def DataGenerator(self):
+  def DataGenerator(self, maskRequired: bool = True):
     self.dataGen = {}
     print('=== init data generator ===')
+    
     for x in listdir(self.data_dir):
-      if not "mask" in x:
-        img = imread(f"{self.data_dir}/{x}")
-        
-        try:  mask = imread(f"{self.data_dir}/{x.replace('.', '_mask.')}")
-        except: 
-          y = x.replace('.', '_mask.').replace('.tif', '.png')
+      if maskRequired:
+        if not "mask" in x:
+          img = imread(f"{self.data_dir}/{x}")
           
-          try: mask = pngRead(f"{self.data_dir}/{y}")
-          except: raise Exception(f"Mask file not found for {x}")
+          try:  mask = imread(f"{self.data_dir}/{x.replace('.', '_mask.')}")
+          except: 
+            y = x.replace('.', '_mask.').replace('.tif', '.png')
+            
+            try: mask = pngRead(f"{self.data_dir}/{y}")
+            except: raise Exception(f"Mask file not found for {x}")
 
-        self.dataGen[x] = {'img':img, 'mask':mask, 'pmask': None}
+          self.dataGen[x] = {'img':img, 'mask':mask, 'pmask': None}
+      else:
+        if not "mask" in x:
+          img = imread(f"{self.data_dir}/{x}")
+          self.dataGen[x] = {'img':img, 'mask':None, 'pmask': None}
     
     print('=== returned data generator ===')
     return self.dataGen
@@ -105,10 +111,10 @@ class Schmoo:
               imgResize: tuple = (450, 450),
               saveImages: bool = True,
               figures: bool = True,
-              getData: bool = True
+              getData: bool = True,
           ):
     
-    if getData: Schmoo.DataGenerator(self)
+    if getData: Schmoo.DataGenerator(self, maskRequired=False)
 
     if model_name in listdir(self.model_dir):
             

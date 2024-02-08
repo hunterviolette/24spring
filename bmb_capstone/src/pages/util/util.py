@@ -15,14 +15,14 @@ class Preprocessing:
   def Cleaner(self, file: str):
     dir = self.import_dir.split('/')[-1]
 
-    if dir == 'original':
+    if dir in ['original', 'ws_set2']:
       return file.lower(
                 ).replace(" ", "_"
                 ).replace("groundtruth", "remove"
                 ).replace("dict", ""
                 ).replace("dic", "")
 
-    elif dir ==  'tania':
+    elif dir in ['tania', 'tania_unlabeled']:
       return file.lower(
           ).replace("_ dict", "_dict"
           ).replace(" ", "_"
@@ -84,8 +84,8 @@ class Preprocessing:
 if __name__ == "__main__":
   loadFiles, gpuEnabled = True, False
 
-  x = Preprocessing(import_dir='./raw_data/tania', 
-                    export_dir='./data/tania')
+  x = Preprocessing(import_dir='./raw_data/tania_unlabeled', 
+                    export_dir='./data/tania_unlabeled')
   
   if loadFiles: x.VerifyFiles()
   if gpuEnabled: x.TorchGPU()
