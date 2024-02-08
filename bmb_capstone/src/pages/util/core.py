@@ -57,10 +57,11 @@ class Schmoo:
                 weight_decay: float = .00001,
                 n_epochs: int  = 250, 
                 save_every: int = 50, # save after amount of epochs
-                min_train_masks: int = 0,
+                min_train_masks: int = 5,
                 residual_on: bool = True, # celloose Unet if True
                 rescale: bool = True,
                 normalize: bool = True,
+                savePath: str = './'
             ):
 
     Schmoo.DataGenerator(self)
@@ -77,24 +78,23 @@ class Schmoo:
                 ])
 
     print(f'=== init training model: {name} ===')
-    model = models.CellposeModel(gpu=self.gpu,
-                                model_type=model_type,
-                                diam_mean=self.diam_mean
+    models.CellposeModel(
+                        gpu=self.gpu,
+                        model_type=model_type,
+                        diam_mean=self.diam_mean
+                      ).train(train_data=train_data, 
+                              train_labels=train_labels,
+                              channels=image_channels, 
+                              learning_rate=learning_rate, 
+                              weight_decay=weight_decay, 
+                              n_epochs=n_epochs,
+                              normalize=normalize,
+                              rescale=rescale,
+                              save_every=save_every,
+                              min_train_masks=min_train_masks,
+                              save_path=savePath,
+                              model_name=name
                             )
-    
-    model.train(train_data=train, 
-                train_labels=train_labels,
-                channels=image_channels, 
-                learning_rate=learning_rate, 
-                weight_decay=weight_decay, 
-                n_epochs=n_epochs,
-                normalize=normalize,
-                rescale=rescale,
-                save_every=save_every,
-                min_train_masks=min_train_masks,
-                save_path='./',
-                model_name=name
-              )
     
     print(f"=== saved {name} to ./ after {time()-self.timeStart} seconds ===")
 
@@ -181,7 +181,7 @@ if __name__ == "__main__":
             diam_mean=80
           )
   
-  dataGen, train, test, stats = False, False, False, True
+  dataGen, train, test, stats = False, True, False, False
 
   if dataGen:
       data = x.DataGenerator()
@@ -191,7 +191,7 @@ if __name__ == "__main__":
         print(image, mask, key, sep='\n')
         break
   
-  if train: x.TrainModel()
+  if train: x.TrainModel(savePath='../..')
   if test: x.TestModel(model_name='cyto_lr20_wd20000_ep100_7559516', 
                       numPredictions=5)
     
