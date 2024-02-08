@@ -1,13 +1,14 @@
 from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
 from cellpose import models
-from cellpose import metrics
+from cellpose.metrics import aggregated_jaccard_index
 from os.path import abspath, exists
 from os import listdir, makedirs
 from time import time
 from datetime import datetime
 from cv2 import resize
 from typing import Optional
+import numpy as np
 
 class Schmoo:
     
@@ -29,41 +30,44 @@ class Schmoo:
   def initDir(self, dir_path):
     if not exists(dir_path): makedirs(dir_path)
     else: print(f"Directory: {dir_path} exists")
-
+  
   def DataGenerator(self):
-    data, data_labels, names = [], [], []
+    self.dataGen = {}
+    print('=== init data generator ===')
     for x in listdir(self.data_dir):
-        if not "mask" in x:
-            data.append(imread(f"{self.data_dir}/{x}"))
-            try: data_labels.append(imread(f"{self.data_dir}/{x.replace('.', '_mask.')}"))
-            except:
-                y = x.replace('.', '_mask.').replace('.tif', '.png')
-                try: data_labels.append(pngRead(f"{self.data_dir}/{y}"))
-                except: raise Exception("Data generator error")
-            names.append([x, x.replace('.', '_mask.')])
+      if not "mask" in x:
+        img = imread(f"{self.data_dir}/{x}")
+        
+        try:  mask = imread(f"{self.data_dir}/{x.replace('.', '_mask.')}")
+        except: 
+          y = x.replace('.', '_mask.').replace('.tif', '.png')
+          
+          try: mask = pngRead(f"{self.data_dir}/{y}")
+          except: raise Exception(f"Mask file not found for {x}")
 
-    assert len(data) == len(data_labels)
+        self.dataGen[x] = {'img':img, 'mask':mask, 'pmask': None}
     
-    print(f"img len: {len(data)}, mask len: {len(data_labels)}")
-    return data, data_labels, names
+    print('=== returned data generator ===')
+    return self.dataGen
 
   def TrainModel(self,
                 model_type: str = 'cyto',
                 image_channels: list[int] = [0,0], # gray scale images
                 learning_rate: float = .2,
                 weight_decay: float = .00001,
-                n_epochs: int  = 100, 
-                save_every: int = 10, # save after amount of epochs
+                n_epochs: int  = 250, 
+                save_every: int = 50, # save after amount of epochs
                 min_train_masks: int = 0,
                 residual_on: bool = True, # celloose Unet if True
                 rescale: bool = True,
                 normalize: bool = True,
             ):
 
-    print('=== init data generator ===')
-    images_train, masks_train, file_train = Schmoo.DataGenerator(self)
-    #images_test, masks_test, file_test = Schmoo.DataGenerator(self)
-    print('=== returned data generator ===')
+    Schmoo.DataGenerator(self)
+    train_data, train_labels = [], []
+    for key in self.dataGen.keys():
+      train_data.append(self.dataGen[key]["img"])
+      train_labels.append(self.dataGen[key]["mask"])
 
     name = "_".join([model_type,
                     f"lr{int(learning_rate*100)}",
@@ -78,21 +82,19 @@ class Schmoo:
                                 diam_mean=self.diam_mean
                             )
     
-    model.train(train_data=images_train, 
-                train_labels=masks_train,
-                #test_data=images_test,
-                #test_labels=masks_test,
+    model.train(train_data=train, 
+                train_labels=train_labels,
                 channels=image_channels, 
                 learning_rate=learning_rate, 
                 weight_decay=weight_decay, 
                 n_epochs=n_epochs,
                 normalize=normalize,
                 rescale=rescale,
-                #save_every=save_every,
+                save_every=save_every,
                 min_train_masks=min_train_masks,
                 save_path='./',
                 model_name=name
-            )
+              )
     
     print(f"=== saved {name} to ./ after {time()-self.timeStart} seconds ===")
 
@@ -103,12 +105,10 @@ class Schmoo:
               imgResize: tuple = (450, 450),
               saveImages: bool = True,
               figures: bool = True,
-              stats: bool = False
+              getData: bool = True
           ):
-      
-    print('=== init data generator ===')
-    images_test, masks_test, file_test = Schmoo.DataGenerator(self)
-    print('=== returned data generator ===')
+    
+    if getData: Schmoo.DataGenerator(self)
 
     if model_name in listdir(self.model_dir):
             
@@ -120,53 +120,79 @@ class Schmoo:
         stringTime = datetime.now().strftime('%Y-%m-%d_%H').replace('-', '_')
         savePath = f"{self.predict_dir}/{stringTime}_{model_name}"    
 
-        if (len(images_test) > 0) and saveImages: 
+        if (len(self.dataGen.keys()) > 0) and saveImages: 
           Schmoo.initDir(self, savePath)
           print(f"Saving images to: {savePath}")
             
-        fig, stat = [], [] 
-        for i, img in enumerate(images_test):
-            filename = file_test[i][0]
-            mask, flow, styles = model.eval(img,
-                                            channels=image_channels,
-                                            rescale=True,
-                                            diameter=self.diam_mean)
-            print(f"Evaluated: {filename}")
+        fig, stat, count = [], [], 0 
+        for key in self.dataGen.keys():
+          filename, img = key, self.dataGen[key]["img"]
+          pmask, flow, styles = model.eval(img,
+                                          channels=image_channels,
+                                          rescale=True,
+                                          diameter=self.diam_mean
+                                        )
+          
+          print(f"Generated mask for {filename}")
+          self.dataGen[key]["pmask"] = pmask
+          
+          if round(pmask.mean(),5) > 0:
+            if saveImages:
+              imwrite(f"{savePath}/img_{filename}", img)
+              imwrite(f"{savePath}/mask_{filename}", pmask)
+              print(f"Saved img/mask for {filename}")
             
-            if round(mask.mean(),5) > 0:
-                if saveImages:
-                  imwrite(f"{savePath}/img_{filename}", img)
-                  imwrite(f"{savePath}/mask_{filename}", mask)
-                  print(f"Saved img/mask to img_{filename} / mask_{filename}")
-                
-                if figures: 
-                  fig.append([x for x in [resize(img, imgResize), resize(mask, imgResize), filename]])
+            if figures: 
+              rImg, rMask = resize(img, imgResize), resize(pmask, imgResize)
+              fig.append([x for x in [rImg, rMask, filename]])
 
-                if stats: stat.append([mask, filename])
+          else: print(f"No mask found for {filename}")
 
-            else: print(f"No mask found for {filename}")
-
-            if (numPredictions != None) and (i+1 >= numPredictions): break 
+          count += 1
+          if (numPredictions != None) and (count >= numPredictions): break 
     else: raise Exception(f"{model_name}: not found in {self.model_dir}")
-    if (len(fig) > 0) or (len(stat) > 0): 
-        if figures and stats: 
-          return [fig, stat]
-        elif figures: return fig
-        elif stats: return stat
+    if len(fig) > 0: return fig
+  
+  def ModelStats(self, 
+                modelName: str = 'cyto_lr20_wd20000_ep100_7559516',
+                numPredictions: int = 2,
+              ):
     
+    Schmoo.DataGenerator(self)
+    Schmoo.TestModel(self,
+                    model_name=modelName, 
+                    numPredictions=numPredictions,
+                    getData=False,
+                  )
+    
+    masks, pmasks = [], []
+    for key in self.dataGen.keys():
+      pmask = self.dataGen[key]["pmask"]
+      if isinstance(pmask, np.ndarray):
+        masks.append(self.dataGen[key]["mask"])
+        pmasks.append(pmask)
+
+    return [modelName, aggregated_jaccard_index(masks, pmasks)]
+
 if __name__ == "__main__":
-  x = Schmoo(data_dir='./data/tania', diam_mean=80)
-  dataGen, train, test = False, False, False
-  debug = True
+  x = Schmoo(model_dir='../../models',
+            data_dir='../../data/tania', 
+            predict_dir='../../predictions', 
+            diam_mean=80
+          )
+  
+  dataGen, train, test, stats = False, False, False, True
 
   if dataGen:
-      data, data_labels, names = x.DataGenerator()
-      print(data[0], data[0].mean(), 
-          data_labels[0], data_labels[0].mean(),
-          names[0], 
-          sep='\n'
-      )
+      data = x.DataGenerator()
+      print(len(data.keys()))
+      for key in data.keys():
+        image, mask = data[key]["img"], data[key]["mask"] 
+        print(image, mask, key, sep='\n')
+        break
   
   if train: x.TrainModel()
   if test: x.TestModel(model_name='cyto_lr20_wd20000_ep100_7559516', 
-                      debug=debug)
+                      numPredictions=5)
+    
+  if stats: x.ModelStats()
