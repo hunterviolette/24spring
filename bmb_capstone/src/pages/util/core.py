@@ -1,14 +1,17 @@
-from tifffile import imread, imwrite
-from skimage.io import imread as pngRead
-from cellpose import models
-from cellpose.metrics import aggregated_jaccard_index
-from os.path import exists
-from os import listdir, makedirs
+import numpy as np
+import pandas as pd
+import os
+
 from time import time
 from datetime import datetime
 from typing import Optional
-import numpy as np
+
+from tifffile import imread, imwrite
+from skimage.io import imread as pngRead
 from cv2 import resize
+
+from cellpose import models
+from cellpose.metrics import aggregated_jaccard_index
 
 class Schmoo:
     
@@ -28,14 +31,14 @@ class Schmoo:
     self.diam_mean = diam_mean
       
   def initDir(self, dir_path):
-    if not exists(dir_path): makedirs(dir_path)
+    if not os.path.exists(dir_path): os.makedirs(dir_path)
     else: print(f"Directory: {dir_path} exists")
   
   def DataGenerator(self, maskRequired: bool = True):
     self.dataGen = {}
     print('=== init data generator ===')
     
-    for x in listdir(self.data_dir):
+    for x in os.listdir(self.data_dir):
       if maskRequired:
         if not "mask" in x:
           img = imread(f"{self.data_dir}/{x}")
@@ -113,16 +116,20 @@ class Schmoo:
               image_channels: list[int] = [0,0], # Assumes 2 channel greyscale
               numPredictions: Optional[int] = None, # Number of predictions before breaking loop
               imgResize: Optional[int] = None, # int value in pixels  
-              saveImages: bool = True,
+              saveImages: bool = False,
               figures: bool = True, # Return list of images 
+              hasTruth: bool = False, # Has true masks for images 
+              modelPath: Optional[str] = None
             ):
-    print(numPredictions)
     
     if not hasattr(self, 'dataGen'): Schmoo.DataGenerator(self)
 
-    if model_name in listdir(self.model_dir):
+    if modelPath == None: dir = self.model_dir
+    else: dir = modelPath
+
+    if model_name in os.listdir(dir):
             
-      model = models.CellposeModel(pretrained_model=f"{self.model_dir}/{model_name}",
+      model = models.CellposeModel(pretrained_model=f"{dir}/{model_name}",
                                   gpu=self.gpu,
                               )
       print(f'Opened model: {model_name}')
@@ -145,7 +152,7 @@ class Schmoo:
         
         print(f"Generated mask for {filename}")
         self.dataGen[key]["pmask"] = pmask
-        
+                
         if saveImages:
           imwrite(f"{savePath}/img_{filename}", img)
           imwrite(f"{savePath}/mask_{filename}", pmask)
@@ -158,38 +165,77 @@ class Schmoo:
               tupleSize = (imgResize, imgResize)
               img, pmask = resize(img, tupleSize), resize(pmask, tupleSize)
 
-          fig.append([x for x in [img, pmask, filename]])
+          if hasTruth: fig.append([img, pmask, filename, 
+                                  Schmoo.ModelEval])
+            
+          else: fig.append([img, pmask, filename])
 
         count += 1
         if (numPredictions != None) and (count >= numPredictions): break 
 
       if len(fig) > 0: return fig
 
-    else: raise Exception(f"{model_name}: not found in {self.model_dir}")
+    else: raise Exception(f"{model_name}: not found in {dir}")
   
-  def ModelStats(self, 
-                modelName: str = 'cyto_lr20_wd20000_ep100_7559516',
+  def ModelEval(self, 
+                predMask: Optional[np.ndarray] = None,
+                trueMask: Optional[np.ndarray] = None,
                 numPredictions: Optional[int] = None,
+                modelName: Optional[str] = 'cyto_lr20_wd20000_ep100_7559516',
+                singleEval: bool = False,
+                modelPath: Optional[str] = None,
               ):
     
     if not hasattr(self, 'dataGen'): Schmoo.DataGenerator(self)
-    Schmoo.ModelPredict(self,
-                        model_name=modelName, 
-                        numPredictions=numPredictions,
-                      )
-    
-    return [modelName,
-            aggregated_jaccard_index(
-                Schmoo.DataGenList(self, 'mask'),
-                Schmoo.DataGenList(self, 'pmask') 
-              )
-            ]
+
+    if not singleEval:
+      Schmoo.ModelPredict(self, 
+                          model_name=modelName,
+                          numPredictions=numPredictions,
+                          modelPath=modelPath
+                        )
+      
+      self.dataGen = {key: value for key, value in self.dataGen.items() \
+                      if value['pmask'] is not None}
+
+      return [modelName,
+              aggregated_jaccard_index(
+                  Schmoo.DataGenList(self, 'mask'),
+                  Schmoo.DataGenList(self, 'pmask') 
+              )]
+    else: 
+      if trueMask == None or predMask == None:
+        raise Exception("Single Eval True requires predMask/trueMask")
+      return aggregated_jaccard_index(trueMask, predMask)
+
 
   def BatchTrainModel(self):
     pass
 
-  def CompareModels(self):
-    pass 
+  def CompareModels(self, 
+                    modelDir: str = './saved_models',
+                    numPredictions: Optional[int] = None,
+                  ):
+    
+    Schmoo.DataGenerator(self)
+    
+    df = pd.DataFrame()
+    print(os.listdir(modelDir))
+    for name in os.listdir(modelDir):
+      ret = Schmoo.ModelEval(self,
+                            numPredictions=numPredictions,
+                            modelName=name,
+                            singleEval=False,
+                            modelPath=modelDir
+                            )
+      
+      df = pd.concat([df, pd.DataFrame({'AJI': [ret[1]]}, index=[name])])
+    
+    df = df['AJI'].apply(lambda x: pd.Series(x).describe())
+
+    timeElapsed = ((time() - self.timeStart) / 60).__round__(2)
+    print(f"=== AJI Dataframe after {timeElapsed} minutes===", 
+          df, '=== ===', sep='\n')
 
 if __name__ == "__main__":
   x = Schmoo(model_dir='../../models',
@@ -198,7 +244,8 @@ if __name__ == "__main__":
             diam_mean=80
           )
   
-  dataGen, train, test, stats = False, False, True, False
+  dataGen, train, test = False, False, False
+  eval, compModel = False, True
 
   if dataGen: 
     ret = x.DataGenList('img')
@@ -209,7 +256,14 @@ if __name__ == "__main__":
   if train: x.TrainModel(savePath='../..')
 
   if test: x.ModelPredict(model_name='cyto_lr20_wd20000_ep100_7559516', 
-                          numPredictions=5
+                          numPredictions=5,
                         )
     
-  if stats: x.ModelStats()
+  if eval: 
+    ret = x.ModelEval(modelName='cyto_lr20_wd20000_ep100_7559516',
+                      numPredictions=5,
+                    )
+    
+    print(ret[1], f"Mean: {ret[1].mean()}", sep='\n')
+
+  if compModel: x.CompareModels('../../saved_models', 14)

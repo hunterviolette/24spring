@@ -1,8 +1,55 @@
-from tifffile import imread, imwrite
+import plotly.graph_objects as go
 import numpy as np
 import os 
+
+from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
 from scipy.ndimage import label 
+
+class DashUtil:
+
+  @staticmethod
+  def TransparentImage(img, mask, 
+                      colorscale: str = 'emrld',
+                      colorscale_interp: bool = False
+                    ):
+    img, transparent_mask = img, mask.astype(float) 
+    transparent_mask[transparent_mask == 0] = np.nan
+
+    if colorscale_interp: zmin, zmax = 0, np.max(mask)+1
+    else: zmin, zmax = None, None
+
+    return go.Figure(go.Heatmap(z=np.where(np.isnan(transparent_mask), 
+                                img, 
+                                transparent_mask), 
+                      zmin=zmin, 
+                      zmax=zmax,
+                      colorscale=colorscale
+                    )).update_layout(
+                        margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
+                        height=450, width=650)
+
+  @staticmethod
+  def Formatting( 
+                className: str = 'heading', 
+                color: str = 'info',
+                textAlign: str = 'center'
+              ):
+
+    if className == 'heading':
+      return f"bg-opacity-50 p-1 m-1 bg-{color} text-dark fw-bold rounded text-{textAlign}"
+    
+    elif className == 'mdiv': return {"padding": "10px"} # style not className
+
+    elif className == 'button': return f"btn btn-{color}"
+
+    elif className == 'input': return 'form-control'
+
+    elif className == 'textStyle': return {'text-align': 'center', 'color': 'black'} # style
+    
+    else: raise Exception("className not found")
+
+  
 
 class Preprocessing:
 

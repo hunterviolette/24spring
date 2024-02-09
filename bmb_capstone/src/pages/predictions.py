@@ -1,40 +1,21 @@
-import pandas as pd
-import os
 import numpy as np
 import plotly.graph_objects as go
 import plotly_express as px
 import dash_bootstrap_components as dbc
+import pandas as pd
+import os
+
 from dash import dcc, html, Input, Output, callback, State, dash_table, register_page
 from typing import Optional
 
 if __name__ == '__main__':
     from util.core import Schmoo
-    from util.util import Preprocessing
+    from util.util import Preprocessing, DashUtil
 else:
     from pages.util.core import Schmoo
-    from pages.util.util import Preprocessing
+    from pages.util.util import Preprocessing, DashUtil
 
 register_page(__name__, suppress_callback_exceptions=True)
-
-class DashUtil:
-  @staticmethod
-  def Formatting( className: str = 'heading', 
-                      color: str = 'info',
-                      textAlign: str = 'center'
-                    ):
-
-    if className == 'heading':
-      return f"bg-opacity-50 p-1 m-1 bg-{color} text-dark fw-bold rounded text-{textAlign}"
-    
-    elif className == 'mdiv': return {"padding": "10px"} # style not className
-
-    elif className == 'button': return f"btn btn-{color}"
-
-    elif className == 'input': return 'form-control'
-
-    elif className == 'textStyle': return {'text-align': 'center', 'color': 'black'} # style
-    
-    else: raise Exception("className not found")
 
 class Predictions(DashUtil):
 
@@ -137,26 +118,6 @@ class Predictions(DashUtil):
                 resizeImage: Optional[int],
               ):
       
-      def TransparentImage(img, mask, 
-                          colorscale: str = 'emrld',
-                          colorscale_interp: bool = False
-                        ):
-        img, transparent_mask = img, mask.astype(float) 
-        transparent_mask[transparent_mask == 0] = np.nan
-
-        if colorscale_interp: zmin, zmax = 0, np.max(mask)+1
-        else: zmin, zmax = None, None
-
-        return go.Figure(go.Heatmap(z=np.where(np.isnan(transparent_mask), 
-                                    img, 
-                                    transparent_mask), 
-                          zmin=zmin, 
-                          zmax=zmax,
-                          colorscale=colorscale
-                        )).update_layout(
-                            margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-                            height=450, width=650)
-
       print(clicks, data_dir, model_name, diam_mean, 
             numPredictions, saveImage, resizeImage, 
             sep=' ')
@@ -170,7 +131,7 @@ class Predictions(DashUtil):
                               model_name=model_name, 
                               numPredictions=numPredictions,
                               saveImages=saveImage,
-                              imgResize=resizeImage,
+                              imgResize=resizeImage
                             )
         
         if isinstance(res, list):
@@ -178,6 +139,7 @@ class Predictions(DashUtil):
             mdiv.extend([
                 html.H3(f"Total cells found: {np.max(re[1])} for image: {re[2]}",
                         className=Predictions.Formatting()),
+
                 dbc.Row([
                     dbc.Col([
                         html.H4("Input image"),
@@ -190,8 +152,10 @@ class Predictions(DashUtil):
                     ], width=6),
                     dbc.Col([
                         html.H4("Image with predicted mask overlay"),
-                        dcc.Graph(figure=TransparentImage(re[0], re[1], 'ice', True))
-
+                        dcc.Graph(figure=Predictions.TransparentImage(
+                                                  re[0], re[1], 'ice', True
+                                                )
+                                              )
                     ], width=6), 
                 ], align='justify'),
             ])
