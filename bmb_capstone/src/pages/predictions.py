@@ -92,6 +92,13 @@ class Predictions(DashUtil):
                     ),
         ]),
         dbc.Col([
+            html.H4("Image pixel resize", style={'text-align': 'center'}),
+            dcc.Input(id='resizeImage', type='number', value=450,
+                      className=Predictions.Formatting('input'),
+                      style=Predictions.Formatting('textStyle')
+                    ),
+        ]),
+        dbc.Col([
             html.H4("Click for model predictions"),
             html.Button("click here", n_clicks=0, id="makePredictions", 
                         className=Predictions.Formatting('button', 'info')
@@ -109,15 +116,16 @@ class Predictions(DashUtil):
       Output("diamMean", 'value'),
       Output("numPredictions", 'value'),
       Output("saveImage", 'value'),
-      Output('predictionDiv', 'children')
+      Output('resizeImage', 'value'),
+      Output('predictionDiv', 'children'),
       ],
       Input("makePredictions", "n_clicks"),
-      [
-        State("dataDirs", "value"),
-        State("modelNames", "value"),
-        State("diamMean", "value"),
-        State("numPredictions", "value"),
-        State("saveImage", "value"),
+      [State("dataDirs", "value"),
+      State("modelNames", "value"),
+      State("diamMean", "value"),
+      State("numPredictions", "value"),
+      State("saveImage", "value"),
+      State("resizeImage", "value"),
       ],
     )
     def Predict(clicks: int, 
@@ -126,6 +134,7 @@ class Predictions(DashUtil):
                 diam_mean: float,
                 numPredictions: Optional[int],
                 saveImage: bool,
+                resizeImage: Optional[int],
               ):
       
       def TransparentImage(img, mask, 
@@ -148,16 +157,20 @@ class Predictions(DashUtil):
                             margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
                             height=450, width=650)
 
-      print(clicks, data_dir, model_name, diam_mean, numPredictions, saveImage, sep=' ')
+      print(clicks, data_dir, model_name, diam_mean, 
+            numPredictions, saveImage, resizeImage, 
+            sep=' ')
+      
       mdiv = []
-
       if clicks > 0: 
         res = Schmoo(model_dir=Predictions.modelPath, 
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
                     diam_mean=diam_mean
-                  ).TestModel(model_name=model_name, 
+                  ).ModelPredict(
+                              model_name=model_name, 
                               numPredictions=numPredictions,
-                              saveImages=saveImage
+                              saveImages=saveImage,
+                              imgResize=resizeImage,
                             )
         
         if isinstance(res, list):
@@ -184,7 +197,9 @@ class Predictions(DashUtil):
             ])
         
         print('plotting...')
-      return (data_dir, model_name, diam_mean, numPredictions, saveImage, mdiv)
+      return (data_dir, model_name, diam_mean, 
+              numPredictions, saveImage, resizeImage, mdiv
+            )
 
 x = Predictions()
 layout = x.layout()
