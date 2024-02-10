@@ -127,7 +127,7 @@ class Predictions(DashUtil):
         res = Schmoo(model_dir=Predictions.modelPath, 
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
                     diam_mean=diam_mean
-                  ).ModelPredict(
+                  ).Predict(
                               model_name=model_name, 
                               numPredictions=numPredictions,
                               saveImages=saveImage,
