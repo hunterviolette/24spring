@@ -49,8 +49,6 @@ class DashUtil:
     
     else: raise Exception("className not found")
 
-  
-
 class Preprocessing:
 
   def __init__(self, 
@@ -131,8 +129,8 @@ class Preprocessing:
 if __name__ == "__main__":
   loadFiles, gpuEnabled = True, False
 
-  x = Preprocessing(import_dir='./raw_data/tania_unlabeled', 
-                    export_dir='./data/tania_unlabeled')
+  x = Preprocessing(import_dir='../../raw_data/tania_unlabeled', 
+                    export_dir='../../data/tania_unlabeled')
   
   if loadFiles: x.VerifyFiles()
   if gpuEnabled: x.TorchGPU()

@@ -128,11 +128,12 @@ class Predictions(DashUtil):
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
                     diam_mean=diam_mean
                   ).Predict(
-                              model_name=model_name, 
-                              numPredictions=numPredictions,
-                              saveImages=saveImage,
-                              imgResize=resizeImage
-                            )
+                          model_name=model_name, 
+                          numPredictions=numPredictions,
+                          saveImages=saveImage,
+                          imgResize=resizeImage,
+                          hasTruth=False,
+                        )
         
         if isinstance(res, list):
           for re in res:
