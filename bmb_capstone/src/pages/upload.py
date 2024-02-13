@@ -102,16 +102,11 @@ class Upload(DashUtil):
           except:
             reject.append(f"file {file} was unable to be opened as .tif or .png")
         
-        print(fileDict.keys(), len(fileDict.keys()))
-
         if hasMask and len(fileDict.keys()) > 1:
           for key in fileDict.keys():
-            print(f"this key is: {key}")
             if ".tif" in key: tif, png = True, False
             elif ".png" in key: png, tif = True, False
             maskName = key.replace(".", "_mask.")
-            print(f"mask name: {maskName}")
-            print(filefinder[maskName])
 
             if maskName in filefinder:
               mask = x.ReadImage(filefinder[maskName], Upload.load_dir)
@@ -130,9 +125,6 @@ class Upload(DashUtil):
                             f"{fileDict[key]['filename']}, expected filename: "
                             f"{maskName.split('.')[0]} and be .png or .tif"
                           )
-        
-        for f in fileDict.keys():
-          print(fileDict[f]["mask"])
 
         if len(fileDict.keys()) > 1: 
           popKeys = []
