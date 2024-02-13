@@ -127,7 +127,7 @@ class Preprocessing:
     print("CUDA version:", torch.version.cuda)
 
 if __name__ == "__main__":
-  loadFiles, gpuEnabled = True, False
+  loadFiles, gpuEnabled = False, True
 
   x = Preprocessing(import_dir='../../raw_data/tania_unlabeled', 
                     export_dir='../../data/tania_unlabeled')

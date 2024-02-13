@@ -1,7 +1,4 @@
-import pandas as pd
 import pint
-import cmath
-import math
 
 class e1:
   def __init__(self) -> None:

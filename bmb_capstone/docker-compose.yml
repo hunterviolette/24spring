@@ -4,9 +4,9 @@ services:
   py:
     build: .
     tty: true
-    network_mode: host
-    container_name: cellpose
-    environment:
-      - DISPLAY=:0
+    container_name: hunterpose
+    ports:
+      - 8050:8050
     volumes:
-      - /tmp/.X11-unix:/tmp/.X11-unix
+      - ./vol:/root/vol
+    runtime: nvidia
