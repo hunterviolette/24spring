@@ -1,21 +1,14 @@
 import numpy as np
 import plotly.graph_objects as go
-import plotly_express as px
 import dash_bootstrap_components as dbc
 import os
 
 from dash import dcc, html, Input, Output, callback, State, dash_table, register_page
-from typing import Optional
-
-from tifffile import imread, imwrite
-from skimage.io import imread as pngRead
-from scipy.ndimage import label 
+from tifffile import imwrite
 
 if __name__ == '__main__':
-    from util.core import Schmoo
     from util.util import Preprocessing, DashUtil
 else:
-    from pages.util.core import Schmoo
     from pages.util.util import Preprocessing, DashUtil
 
 register_page(__name__, suppress_callback_exceptions=True)
@@ -88,18 +81,20 @@ class Upload(DashUtil):
       ],
     )
     def update_output(clicks, tag, hasMask, segmented):
-      if clicks > 0 and tag != None: 
+      print(clicks, tag, hasMask, segmented, sep=', ')
+      if clicks > 0 and tag != None and hasMask != None and segmented != None: 
         fileList = os.listdir(Upload.load_dir)
         print(fileList)
 
         mdiv, reject = [], []
         x = Preprocessing(Upload.load_dir, Upload.image_dir)
-        filefinder = {x.Cleaner(f):f for f in fileList}
+        filefinder = {x.NameCleaner(f):f for f in fileList}
         
         fileDict = {}
         for file in [f for f in fileList if f.endswith(('.tif', '.png'))]:
           try:
-            name = str(x.Cleaner(file))
+            name = str(x.NameCleaner(file))
+            print(name)
 
             if "mask" not in name:
               img = x.ReadImage(file, Upload.load_dir)
@@ -107,43 +102,59 @@ class Upload(DashUtil):
           except:
             reject.append(f"file {file} was unable to be opened as .tif or .png")
         
-        if hasMask:
+        print(fileDict.keys(), len(fileDict.keys()))
+
+        if hasMask and len(fileDict.keys()) > 1:
           for key in fileDict.keys():
-            if ".tif" in key: tif = True
-            elif ".png" in key: png = True
+            print(f"this key is: {key}")
+            if ".tif" in key: tif, png = True, False
+            elif ".png" in key: png, tif = True, False
             maskName = key.replace(".", "_mask.")
+            print(f"mask name: {maskName}")
+            print(filefinder[maskName])
 
             if maskName in filefinder:
               mask = x.ReadImage(filefinder[maskName], Upload.load_dir)
+              if not segmented: mask = x.SegmentMask(mask) # Hand-drawn imageJ masks
+              fileDict[key]["mask"] = mask
             else:
               if tif: name = maskName.replace(".tif", ".png")
               elif png: name = maskName.replace(".png", ".tif")
 
-              if name in filefinder: mask = x.ReadImage(file, Upload.load_dir)
+              if name in filefinder: 
+                mask = x.ReadImage(file, Upload.load_dir)
+                if not segmented: mask = x.SegmentMask(mask) # Hand-drawn imageJ masks
+                fileDict[key]["mask"] = mask
               else: reject.append(
                             f"Could not find a mask file for "
                             f"{fileDict[key]['filename']}, expected filename: "
                             f"{maskName.split('.')[0]} and be .png or .tif"
                           )
-
-              if not segmented: mask = x.SegmentMask(mask)
-              fileDict[key]["mask"] = mask
-          
-        for key in fileDict.keys():
-          row = fileDict[key]
-          image, mask = row["img"], row["mask"]
-          
-          for f in [[image, "Image"], [mask, "Mask"]]:
-
-            if isinstance(f[0], np.ndarray):
-              if len(f[0]) != 2:
-                reject.append(f"Image has shape of {len(f[1])}, expected 2")
-                fileDict.pop(key)
-            else:
-              reject.append(f"Image could not be opened: {f[1]}")
-              fileDict.pop(key)
         
-        if len(fileDict.keys()) > 0: 
+        for f in fileDict.keys():
+          print(fileDict[f]["mask"])
+
+        if len(fileDict.keys()) > 1: 
+          popKeys = []
+          for key in fileDict.keys():
+            row = fileDict[key]
+            image, mask = row["img"], row["mask"]
+            
+            for f in [[image, "Image"], [mask, "Mask"]]:
+
+              if isinstance(f[0], np.ndarray):
+                if len(f[0].shape) != 2:
+                  reject.append(f"{f[1]} has shape of {len(f[0].shape)}, expected 2")
+                  popKeys.append(key)
+              else:
+                reject.append(f"{f[1]} could not be opened: {key}")
+                popKeys.append(key)
+        
+          if len(popKeys) > 0:
+            for key in list(set(popKeys)): fileDict.pop(key)
+
+        
+        if len(fileDict.keys()) > 1: 
           x.initDir(f"{Upload.image_dir}/{tag}")
 
           for key in fileDict.keys():
@@ -168,8 +179,8 @@ class Upload(DashUtil):
         return (mdiv, tag, hasMask, segmented)
       else: 
         msg = " ".join([
-                    "To start, place images in vol/load_images, enter a unique"
-                    "tag for set, and click the "
+                    "To start, place images in vol/load_images"
+                    "and enter a unique tag for set of images in load_images"
                     ])
         return (html.H2(msg), tag, hasMask, segmented)
         

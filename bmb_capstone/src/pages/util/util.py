@@ -73,24 +73,23 @@ class Preprocessing:
     if not os.path.exists(dir_path): os.makedirs(dir_path)
     else: print(f"Directory: {dir_path} exists")
 
-  def Cleaner(self, file: str):
-    dir = self.import_dir.split('/')[-1]
+  @staticmethod
+  def NameCleaner(file: str):
 
-    if dir in ['original', 'ws_set2']:
-      return file.lower(
-                ).replace(" ", "_"
-                ).replace("groundtruth", "mask"
-                ).replace("dict", ""
-                ).replace("dic", "")
+    return file.lower(
+            ).replace(" ", "_"
+            ).replace("groundtruth", "mask"
+            ).replace("dict", ""
+            ).replace("dic", "")
 
-    elif dir in ['tania', 'tania_unlabeled']:
+    '''elif dir in ['tania', 'tania_unlabeled']:
       return file.lower(
           ).replace("_ dict", "_dict"
           ).replace(" ", "_"
           ).replace("masks", "mask"
-          ).replace("_dict", "")
+          ).replace("_dict", "")'''
     
-  def CleanFileNames(self,):
+  def CleanFileNames(self):
     
     eFiles = os.listdir(self.export_dir)
     if len(eFiles) >= 1: 

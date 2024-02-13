@@ -18,10 +18,9 @@ from cellpose.metrics import aggregated_jaccard_index
 from torch import load, save
 
 if __name__ == '__main__':
-    from util import Preprocessing, DashUtil
+    from util import Preprocessing
 else:
-    from pages.util.core import Schmoo
-    from pages.util.util import Preprocessing, DashUtil
+    from pages.util.util import Preprocessing
 
 class Schmoo(Preprocessing):
     
