@@ -19,8 +19,8 @@ register_page(__name__, suppress_callback_exceptions=True)
 
 class Predictions(DashUtil):
 
-  dataPath = './data'
-  modelPath = './models'
+  dataPath = './vol/image_data'
+  modelPath = './vol/models'
 
   def __init__(self) -> None:
     pass

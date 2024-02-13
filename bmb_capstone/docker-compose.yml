@@ -10,3 +10,4 @@ services:
     volumes:
       - ./vol:/root/vol
     runtime: nvidia
+    command: python3 app.py
