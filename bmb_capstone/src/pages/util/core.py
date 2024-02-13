@@ -17,7 +17,13 @@ from cellpose import models
 from cellpose.metrics import aggregated_jaccard_index
 from torch import load, save
 
-class Schmoo:
+if __name__ == '__main__':
+    from util import Preprocessing, DashUtil
+else:
+    from pages.util.core import Schmoo
+    from pages.util.util import Preprocessing, DashUtil
+
+class Schmoo(Preprocessing):
     
   def __init__(self, 
               useGpu: bool = True,
@@ -33,10 +39,6 @@ class Schmoo:
     self.data_dir = data_dir
     self.predict_dir = predict_dir
     self.diam_mean = diam_mean
-      
-  def initDir(self, dir_path):
-    if not os.path.exists(dir_path): os.makedirs(dir_path)
-    else: print(f"Directory: {dir_path} exists")
 
   def ElapsedTime(self):
     deltaT = ((time() - self.timeStart)).__round__(2)

@@ -57,13 +57,29 @@ class Preprocessing:
     self.import_dir = import_dir
     self.export_dir = export_dir
 
+  @staticmethod
+  def ReadImage(name, directory):
+    if ".tif" in name: return imread(f"{directory}/{name}") 
+    if ".png" in name: return pngRead(f"{directory}/{name}") 
+
+  @staticmethod
+  def SegmentMask(mask):
+    mask[(mask > 1) & (mask <= 255)] = 1
+    mask, features = label(mask) 
+    return mask
+  
+  @staticmethod
+  def initDir(dir_path):
+    if not os.path.exists(dir_path): os.makedirs(dir_path)
+    else: print(f"Directory: {dir_path} exists")
+
   def Cleaner(self, file: str):
     dir = self.import_dir.split('/')[-1]
 
     if dir in ['original', 'ws_set2']:
       return file.lower(
                 ).replace(" ", "_"
-                ).replace("groundtruth", "remove"
+                ).replace("groundtruth", "mask"
                 ).replace("dict", ""
                 ).replace("dic", "")
 
@@ -89,7 +105,7 @@ class Preprocessing:
       if ".tif" in file:  
         img = imread(f"{self.import_dir}/{file}") 
 
-        if "remove" in name: 
+        if "tmp" in name: 
           name = name.replace(".", "_mask.").replace("remove", "")
           img[(img > 1) & (img <= 255)] = 1
           img, features = label(img) 
