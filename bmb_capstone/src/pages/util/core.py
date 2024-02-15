@@ -349,9 +349,9 @@ class Schmoo(Preprocessing):
       return aggregated_jaccard_index([trueMask], [predMask])[0]
 
   def BatchEval(self, 
-                modelDir: str = './saved_models',
+                modelDir: str = './vol/models',
                 numPredictions: Optional[int] = None,
-                diamMeans: List[int] = [30],
+                diamMeans: List[int] = [30, 80],
                 saveCsv: bool = False
               ):
     
@@ -359,7 +359,8 @@ class Schmoo(Preprocessing):
     
     df = pd.DataFrame()
     print(os.listdir(modelDir))
-    for name, diamMean in product(os.listdir(modelDir), diamMeans):
+    modelList = [f for f in os.listdir(modelDir) if f != 'test_models']
+    for name, diamMean in product(modelList, diamMeans):
 
       self.cellposeModel = models.CellposeModel(
                                     gpu=self.gpu,
@@ -377,7 +378,8 @@ class Schmoo(Preprocessing):
       df = pd.concat([df, pd.DataFrame({'AJI': [ret[1]]}, 
                       index=[f"dm{diamMean}_{name}"])])
     
-    df = df['AJI'].apply(lambda x: pd.Series(x).describe())
+    df = df['AJI'].apply(lambda x: pd.Series(x).describe()
+                  ).sort_values('mean', ascending=False)
     
     if saveCsv: 
       df.to_csv(f"{modelDir.split('/')[-1]}_{str(time()).split('.')[1]}.csv")
@@ -385,7 +387,7 @@ class Schmoo(Preprocessing):
     self.evalDF = df
     timeElapsed = ((time() - self.timeStart) / 60).__round__(2)
     print(f"=== AJI Dataframe after {timeElapsed} minutes===", 
-          df.sort_values('mean', ascending=False), '=== ===', sep='\n')
+          df, '=== ===', sep='\n')
 
   def BatchLoop(self, modelDir: str = '../models/original_30diam_3step'):
     
@@ -404,13 +406,13 @@ class Schmoo(Preprocessing):
 if __name__ == "__main__":
   x = Schmoo(
           model_dir='../../../vol/models',
-          data_dir='../../../vol/image_data/original', 
+          data_dir='../../../vol/image_data/tania', 
           predict_dir='../../../vol/predictions', 
           diam_mean=30
         )
   
   dataGen, train, predict = False, False, False
-  eval, batchEval, batchTrain = True, False, False
+  eval, batchEval, batchTrain = False, True, False
 
   if dataGen: 
     ret = x.DataGenList('img')
@@ -431,13 +433,12 @@ if __name__ == "__main__":
     
     print(ret[1], f"Mean: {ret[1].mean()}", sep='\n')
 
-  if batchEval: x.BatchEval(modelDir='../../models/original_30diam_3step', 
+  if batchEval: x.BatchEval(modelDir='../../../vol/models', 
                             numPredictions=3, 
                             saveCsv=True,
-                            diamMeans=[80]
                           )
 
-  if batchTrain: x.BatchTrain(savePath='../../models/original_30diam_3step', 
+  if batchTrain: x.BatchTrain(savePath='../../vol/models/original_30diam_3step', 
                               steps=1,
                               train=True)
     
