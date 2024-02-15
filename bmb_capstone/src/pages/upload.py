@@ -5,6 +5,7 @@ import os
 
 from dash import dcc, html, Input, Output, callback, State, dash_table, register_page
 from tifffile import imwrite
+from cv2 import resize
 
 if __name__ == '__main__':
     from util.util import Preprocessing, DashUtil
@@ -56,6 +57,18 @@ class Upload(DashUtil):
                       ),
               ]),
               dbc.Col([
+                  html.H4("Full Validation", style={'text-align': 'center'}),
+                  html.Br(),
+                  dcc.Dropdown(id='uploadVal', multi=False,
+                      style=Upload.Formatting('textStyle'),
+                      options=[
+                          {'label': 'True', 'value': True},
+                          {'label': 'False', 'value': False}
+                        ],
+                      value=True
+                      ),
+              ]),
+              dbc.Col([
                   html.H4("Click to load images"),
                   html.Button("click here", n_clicks=0, id="uploadButton", 
                               className=Upload.Formatting('button', 'info')
@@ -73,28 +86,34 @@ class Upload(DashUtil):
       Output("uploadTag", 'value'),
       Output("uploadMask", 'value'),
       Output("uploadSeg", 'value'),
+      Output("uploadVal", 'value'),
       ],
       Input('uploadButton', 'n_clicks'),
       [State("uploadTag", "value"),
       State("uploadMask", "value"),
       State("uploadSeg", "value"),
+      State("uploadVal", 'value'),
       ],
     )
-    def update_output(clicks, tag, hasMask, segmented):
-      print(clicks, tag, hasMask, segmented, sep=', ')
-      if clicks > 0 and tag != None and hasMask != None and segmented != None: 
+    def update_output(clicks, tag, hasMask, segmented, val):
+      print(clicks, tag, hasMask, segmented, val, sep=', ')
+      if clicks > 0 and \
+          tag != None and \
+          hasMask != None and \
+          segmented != None and \
+          val != None: 
+        
         fileList = os.listdir(Upload.load_dir)
-        print(fileList)
+        if val: fullVal = len(fileList)
 
         mdiv, reject = [], []
-        x = Preprocessing(Upload.load_dir, Upload.image_dir)
+        x = Preprocessing()
         filefinder = {x.NameCleaner(f):f for f in fileList}
         
         fileDict = {}
         for file in [f for f in fileList if f.endswith(('.tif', '.png'))]:
           try:
             name = str(x.NameCleaner(file))
-            print(name)
 
             if "mask" not in name:
               img = x.ReadImage(file, Upload.load_dir)
@@ -122,7 +141,7 @@ class Upload(DashUtil):
                 fileDict[key]["mask"] = mask
               else: reject.append(
                             f"Could not find a mask file for "
-                            f"{fileDict[key]['filename']}, expected filename: "
+                            f"{key}, expected filename: "
                             f"{maskName.split('.')[0]} and be .png or .tif"
                           )
 
@@ -132,49 +151,80 @@ class Upload(DashUtil):
             row = fileDict[key]
             image, mask = row["img"], row["mask"]
             
-            for f in [[image, "Image"], [mask, "Mask"]]:
+            if hasMask: files = [[image, "Image"], [mask, "Mask"]]
+            else: files = [[image, "Image"]]
 
+            for f in files:
               if isinstance(f[0], np.ndarray):
                 if len(f[0].shape) != 2:
-                  reject.append(f"{f[1]} has shape of {len(f[0].shape)}, expected 2")
+                  dm, shp = len(f[0].shape), f[0].shape 
+                  reject.append(f"{f[1]} has dimensions/shape of {dm}/{shp}, expected 2/(int, int)")
                   popKeys.append(key)
               else:
                 reject.append(f"{f[1]} could not be opened: {key}")
                 popKeys.append(key)
         
           if len(popKeys) > 0:
+            print(popKeys)
             for key in list(set(popKeys)): fileDict.pop(key)
-
         
-        if len(fileDict.keys()) > 1: 
+        def WriteWrap():
           x.initDir(f"{Upload.image_dir}/{tag}")
 
           for key in fileDict.keys():
-            imwrite(key, fileDict[key]["img"])
-            imwrite(key.replace('.', '_mask.'), fileDict[key]["mask"])
-          
+            imwrite(
+                f"{Upload.image_dir}/{tag}/{key}", 
+                fileDict[key]["img"])
+            
+            if hasMask: 
+              imwrite(
+                  f"{Upload.image_dir}/{tag}/{key.replace('.', '_mask.')}", 
+                  fileDict[key]["mask"])
+    
           for file in fileList:
             os.remove(f"{Upload.load_dir}/{file}")
+        
+        if val and len(fileDict.keys())*2 == fullVal: WriteWrap()
+        elif not val and len(fileDict.keys()) > 1: WriteWrap()
 
         if hasMask: mdiv.append(html.H2("Accepted image/mask pairs:"))
         else: mdiv.append(html.H2("Accepted images:"))
 
-        for key in fileDict.keys():mdiv.append(html.H5(key))
+        rSize = (450, 450)
+        for key in fileDict.keys():
+          rImg = resize(fileDict[key]["img"], rSize)
+          # Resize img/mask so its easier to render
+          if hasMask:
+            rMask = fileDict[key]["mask"] #resize(fileDict[key]["mask"], rSize)
+
+            mdiv.extend([
+                html.H5(key),
+                dbc.Row([
+                    dbc.Col([
+                        Upload.PlotImage(rImg)
+                    ], width=6),
+                    dbc.Col([
+                        Upload.PlotImage(rMask, 'emrld')
+                    ], width=6), 
+                ], align='justify'),
+            ])
+          else: mdiv.extend([html.H5(key), Upload.PlotImage(rImg)])
 
         if hasMask: mdiv.append(html.H2("Rejcted image/mask pairs:"))
         else: mdiv.append(html.H2("Rejected images:"))
 
         if len(reject) == 0: mdiv.append(html.H5("No rejected images!"))
         else: 
-          for r in reject: mdiv.append(html.H2(r))
+          for r in reject: 
+            mdiv.append(html.H2(r))
 
-        return (mdiv, tag, hasMask, segmented)
+        return (mdiv, tag, hasMask, segmented, val)
       else: 
         msg = " ".join([
                     "To start, place images in vol/load_images"
                     "and enter a unique tag for set of images in load_images"
                     ])
-        return (html.H2(msg), tag, hasMask, segmented)
+        return (html.H2(msg), tag, hasMask, segmented, val)
         
 x = Upload()
 layout = x.layout()

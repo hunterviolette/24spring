@@ -26,9 +26,9 @@ class Schmoo(Preprocessing):
     
   def __init__(self, 
               useGpu: bool = True,
-              model_dir: str = './models',
-              data_dir: str = './data/tania',
-              predict_dir: str = './predictions',
+              model_dir: str = './vol/models',
+              data_dir: str = './vol/image_data/tania',
+              predict_dir: str = './vol/predictions',
               diam_mean: float = 30,
               ) -> None:
     
@@ -106,30 +106,6 @@ class Schmoo(Preprocessing):
     if hasattr(self, 'bigGen'): self.dataGen = self.bigGen
 
     if not hasattr(self, 'dataGen'): Schmoo.DataGenerator(self, maskRequired)
-
-  def ShapeCheck(self,
-                maskRequired: bool = True,
-                directory: Optional[str] = None,  
-              ):
-        
-    Schmoo.DataGenInstance(self, 
-                          maskRequired=maskRequired,
-                          bigGen=directory,
-                        )
-    
-    fails = []
-    for key in self.dataGen.keys():
-      row = self.dataGen[key]
-      img, mask = row["img"], row["mask"]
-
-      if len(img.shape) != 2: 
-        fails.append(["Image", key, img.shape])
-      
-      if maskRequired and len(mask.shape) != 2: 
-        fails.append(["Mask", key, mask.shape])
-
-    for f in fails:
-      print(f"{f[0]}: {f[1]} is not 2D greyscale, its: {f[2]}")
 
   def Train(self,
             model_type: str = 'cyto',
@@ -291,10 +267,10 @@ class Schmoo(Preprocessing):
       print(f'Opened model: {model_name}')
 
       stringTime = datetime.now().strftime('%Y-%m-%d_%H').replace('-', '_')
-      savePath = f"{self.predict_dir}/{stringTime}_{model_name}"    
+      savePath = f"{self.predict_dir}/{stringTime}"    
 
       if (len(self.dataGen.keys()) > 0) and saveImages: 
-        Schmoo.initDir(self, savePath)
+        Schmoo.initDir(savePath)
         print(f"Saving images to: {savePath}")
           
       fig, count = [], 0 
@@ -313,9 +289,8 @@ class Schmoo(Preprocessing):
         self.dataGen[key]["pmask"] = pmask
                 
         if saveImages:
-          imwrite(f"{savePath}/img_{key}", img)
           imwrite(f"{savePath}/mask_{key}", pmask)
-          print(f"Saved img/mask for {key}")
+          print(f"Saved mask for {key}")
         
         if figures: 
           if isinstance(imgResize, int):
@@ -430,7 +405,6 @@ if __name__ == "__main__":
   
   dataGen, train, predict = False, False, False
   eval, batchEval, batchTrain = False, False, False
-  shape = True
 
   if dataGen: 
     ret = x.DataGenList('img')
@@ -461,4 +435,3 @@ if __name__ == "__main__":
                               steps=1,
                               train=True)
     
-  if shape: x.ShapeCheck(False, '../../data/ws_set2')

@@ -15,12 +15,16 @@ else:
     from pages.util.core import Schmoo
     from pages.util.util import Preprocessing, DashUtil
 
-register_page(__name__, suppress_callback_exceptions=True)
+register_page(__name__, 
+              prevent_initial_callbacks=True,
+              suppress_callback_exceptions=True
+            )
 
 class Predictions(DashUtil):
 
   dataPath = './vol/image_data'
   modelPath = './vol/models'
+  predictPath = './vol/predictions'
 
   def __init__(self) -> None:
     pass
@@ -126,6 +130,7 @@ class Predictions(DashUtil):
       if clicks > 0: 
         res = Schmoo(model_dir=Predictions.modelPath, 
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
+                    predict_dir=Predictions.predictPath,
                     diam_mean=diam_mean
                   ).Predict(
                           model_name=model_name, 
@@ -144,19 +149,11 @@ class Predictions(DashUtil):
                 dbc.Row([
                     dbc.Col([
                         html.H4("Input image"),
-                        dcc.Graph(figure=go.Figure(go.Heatmap(
-                          z=re[0], colorscale='greys'
-                          )).update_layout(
-                              margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-                              height=450, width=650
-                        ))
+                        Predictions.PlotImage(re[0])
                     ], width=6),
                     dbc.Col([
                         html.H4("Image with predicted mask overlay"),
-                        dcc.Graph(figure=Predictions.TransparentImage(
-                                                  re[0], re[1], 'ice', True
-                                                )
-                                              )
+                        Predictions.TransparentImage(re[0], re[1], 'ice', True),
                     ], width=6), 
                 ], align='justify'),
             ])
