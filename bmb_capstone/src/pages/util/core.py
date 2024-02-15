@@ -300,7 +300,12 @@ class Schmoo(Preprocessing):
               img, pmask = resize(img, tupleSize), resize(pmask, tupleSize)
 
           if hasTruth: fig.append([img, pmask, key, 
-                                  Schmoo.Eval(self, pmask, mask, singleEval=True)])
+                                  Schmoo.Eval(self, 
+                                              predMask=self.dataGen[key]["pmask"], 
+                                              trueMask=mask, 
+                                              singleEval=True
+                                            )
+                                          ])
             
           else: fig.append([img, pmask, key])
 
@@ -338,9 +343,10 @@ class Schmoo(Preprocessing):
                   Schmoo.DataGenList(self, 'pmask') 
               )]
     else: 
-      if trueMask == None or predMask == None:
-        raise Exception("Single Eval True requires predMask/trueMask")
-      return aggregated_jaccard_index(trueMask, predMask)
+      if not isinstance(trueMask, np.ndarray) and \
+        not isinstance(predMask, np.ndarray):
+          return 0
+      return aggregated_jaccard_index([trueMask], [predMask])[0]
 
   def BatchEval(self, 
                 modelDir: str = './saved_models',
@@ -397,14 +403,14 @@ class Schmoo(Preprocessing):
 
 if __name__ == "__main__":
   x = Schmoo(
-          model_dir='../../models',
-          data_dir='../../data/original', 
-          predict_dir='../../predictions', 
+          model_dir='../../../vol/models',
+          data_dir='../../../vol/image_data/original', 
+          predict_dir='../../../vol/predictions', 
           diam_mean=30
         )
   
   dataGen, train, predict = False, False, False
-  eval, batchEval, batchTrain = False, False, False
+  eval, batchEval, batchTrain = True, False, False
 
   if dataGen: 
     ret = x.DataGenList('img')

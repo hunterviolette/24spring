@@ -36,7 +36,6 @@ class Predictions(DashUtil):
       dbc.Row([
         dbc.Col([
             html.H4("Input directory", style={'text-align': 'center'}),
-            html.Br(),
             dcc.Dropdown(id='dataDirs', multi=False,
                         style=Predictions.Formatting('textStyle'),
                       ),
@@ -61,7 +60,6 @@ class Predictions(DashUtil):
         ]),
         dbc.Col([
             html.H4("Diameter mean", style={'text-align': 'center'}),
-            html.Br(),
             dcc.Input(id='diamMean', type='number', step='1', value=30, 
                       className=Predictions.Formatting('input'),
                       style=Predictions.Formatting('textStyle')
@@ -82,6 +80,17 @@ class Predictions(DashUtil):
                     ),
         ]),
         dbc.Col([
+            html.H4("Has true mask", style={'text-align': 'center'}),
+            html.Br(),
+            dcc.Dropdown(id='predHasMask', multi=False, value=False,
+                style=Predictions.Formatting('textStyle'),
+                options=[
+                    {'label': 'True', 'value': True},
+                    {'label': 'False', 'value': False}
+                  ]
+                ),
+        ]),
+        dbc.Col([
             html.H4("Click for model predictions"),
             html.Button("click here", n_clicks=0, id="makePredictions", 
                         className=Predictions.Formatting('button', 'info')
@@ -99,12 +108,10 @@ class Predictions(DashUtil):
       Input("makePredictions", "n_clicks"),
     )
     def initPred(clicks):
-      if clicks == 0:
-        return (
-          os.listdir(Predictions.dataPath),
-          os.listdir(Predictions.modelPath)
-        )
-
+      return (
+        os.listdir(Predictions.dataPath),
+        os.listdir(Predictions.modelPath)
+      )
 
     @callback(
       [Output("dataDirs", 'value'),
@@ -113,6 +120,7 @@ class Predictions(DashUtil):
       Output("numPredictions", 'value'),
       Output("saveImage", 'value'),
       Output('resizeImage', 'value'),
+      Output('predHasMask', 'value'),
       Output('predictionDiv', 'children'),
       ],
       Input("makePredictions", "n_clicks"),
@@ -122,6 +130,7 @@ class Predictions(DashUtil):
       State("numPredictions", "value"),
       State("saveImage", "value"),
       State("resizeImage", "value"),
+      State('predHasMask', 'value'),
       ],
     )
     def Predict(clicks: int, 
@@ -131,13 +140,14 @@ class Predictions(DashUtil):
                 numPredictions: Optional[int],
                 saveImage: bool,
                 resizeImage: Optional[int],
+                hasMask: bool
               ):
       
       print(clicks, data_dir, model_name, diam_mean, 
-            numPredictions, saveImage, resizeImage, 
+            numPredictions, saveImage, resizeImage, hasMask,
             sep=' ')
-      
-      mdiv = []
+
+      mdiv, ajiList = [], []
       if clicks > 0: 
         res = Schmoo(model_dir=Predictions.modelPath, 
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
@@ -148,13 +158,18 @@ class Predictions(DashUtil):
                           numPredictions=numPredictions,
                           saveImages=saveImage,
                           imgResize=resizeImage,
-                          hasTruth=False,
+                          hasTruth=hasMask,
                         )
         
         if isinstance(res, list):
           for re in res:
+            if hasMask and isinstance(re[3], float): 
+              aji = f" with Jaccard index value: {round(re[3], 4)}"
+              ajiList.append(re[3])
+            else: aji = ""
+
             mdiv.extend([
-                html.H3(f"Total cells found: {np.max(re[1])} for image: {re[2]}",
+                html.H3(f"Found {np.max(re[1])} cells for image {re[2]}{aji}",
                         className=Predictions.Formatting()),
 
                 dbc.Row([
@@ -168,10 +183,23 @@ class Predictions(DashUtil):
                     ], width=6), 
                 ], align='justify'),
             ])
+
+                
+          if hasMask and len(ajiList) >0: 
+            mdiv.insert(0, # append to 0 index
+                        html.H4(f"Mean Jaccard index: {round(sum(ajiList)/len(ajiList),4)}", 
+                                className=Predictions.Formatting(color='primary')
+                        )
+                      )
+            mdiv.insert(0, # append to 0 index
+                        html.H2(f"{[round(x, 4) for x in ajiList]}", 
+                                className=Predictions.Formatting(color='primary')
+                        )
+                      )
         
         print('plotting...')
-      return (data_dir, model_name, diam_mean, 
-              numPredictions, saveImage, resizeImage, mdiv
+      return (data_dir, model_name, diam_mean, numPredictions, 
+              saveImage, resizeImage, hasMask, mdiv
             )
 
 x = Predictions()
