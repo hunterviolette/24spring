@@ -1,8 +1,7 @@
 # Predictions page
-![PredPage](assets/predPage.png)
+Predict a segmented mask for a set of images
+![PredPage](assets/predict_page.png)
 
-# Assumptions
-- Input images or masks are .png or .tif
-- Assumes data loaded has image/mask pair
-  1. if img is named x, mask named x_mask
-  2. Finds mask file by: x.replace(".", "_mask.")
+# Upload page
+Add image sets for training models, creating new masks, or out-of-sample testing 
+![UploadPage](assets/upload_page.png)

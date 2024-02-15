@@ -1,8 +1,6 @@
 import numpy as np
 import plotly.graph_objects as go
-import plotly_express as px
 import dash_bootstrap_components as dbc
-import pandas as pd
 import os
 
 from dash import dcc, html, Input, Output, callback, State, dash_table, register_page
@@ -20,7 +18,7 @@ register_page(__name__,
               suppress_callback_exceptions=True
             )
 
-class Predictions(DashUtil):
+class Predictions(DashUtil, Preprocessing):
 
   dataPath = './vol/image_data'
   modelPath = './vol/models'
@@ -66,21 +64,22 @@ class Predictions(DashUtil):
                     ),
         ]),
         dbc.Col([
-            html.H4("Max number of predictions", style={'text-align': 'center'}),
+            html.H4("Max predictions", style={'text-align': 'center'}),
             dcc.Input(id='numPredictions', type='number', value=None,
                       className=Predictions.Formatting('input'),
                       style=Predictions.Formatting('textStyle')
                     ),
         ]),
         dbc.Col([
-            html.H4("Image pixel resize", style={'text-align': 'center'}),
+            html.H4("Image resize", style={'text-align': 'center'}),
+            html.Br(),
             dcc.Input(id='resizeImage', type='number', value=450,
                       className=Predictions.Formatting('input'),
                       style=Predictions.Formatting('textStyle')
                     ),
         ]),
         dbc.Col([
-            html.H4("Has true mask", style={'text-align': 'center'}),
+            html.H4("True mask", style={'text-align': 'center'}),
             html.Br(),
             dcc.Dropdown(id='predHasMask', multi=False, value=False,
                 style=Predictions.Formatting('textStyle'),
@@ -148,6 +147,9 @@ class Predictions(DashUtil):
             sep=' ')
 
       mdiv, ajiList = [], []
+      mdiv.append(html.H2(Predictions.TorchGPU(), 
+                  className=Predictions.Formatting(color='warning')))
+      
       if clicks > 0: 
         res = Schmoo(model_dir=Predictions.modelPath, 
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
@@ -186,18 +188,74 @@ class Predictions(DashUtil):
 
                 
           if hasMask and len(ajiList) >0: 
-            mdiv.insert(0, # append to 0 index
+            mdiv.insert(1, # append to 0 index
                         html.H4(f"Mean Jaccard index: {round(sum(ajiList)/len(ajiList),4)}", 
                                 className=Predictions.Formatting(color='primary')
                         )
                       )
-            mdiv.insert(0, # append to 0 index
+            mdiv.insert(1, # append to 0 index
                         html.H2(f"{[round(x, 4) for x in ajiList]}", 
                                 className=Predictions.Formatting(color='primary')
                         )
                       )
         
         print('plotting...')
+      else:
+        rules = dcc.Markdown('''
+            1. Input directory
+                ```
+                - Each directory of images in vol/image_data.
+                - Add sets of images as input directories using the Upload page 
+                - Image(s)/mask(s) must be: 2-dimensional and (png or tif)
+                ```
+
+            2. Models
+                ```
+                The cellpose models in vol/models
+                ```
+
+            3. Save predictions
+                ```
+                Saves predicted mask to vol/predictions
+                ```
+
+            4. Diameter mean
+                ```
+                The estimated pixel diameter of the cells
+                Try 30, 80, 15, 120 if you are having 
+                issues with meaningful predictions
+                ```
+
+            5. Max predictions
+                ```
+                If max predictions == None: predict all images in folder
+                else: predict first x images in directory
+                ```
+
+            6. Image resize
+                ```
+                Resizes the image and mask for quicker rendering
+                Default resize is (450, 450)
+                ```
+
+            7. True mask
+                ```
+                If True: 
+                  return jaccard index (JI) to quantify model performance
+                  JI > 0.75 appears to predict well
+                else:
+                  does not return stats on model performance
+                  Set to False if there is no True mask with the image
+                ```
+            ''', 
+          style={
+              'backgroundColor': '#121212',
+              'color': '#FFFFFF',       
+              'padding': '20px',     
+            }
+          )
+
+        mdiv.append(rules)
       return (data_dir, model_name, diam_mean, numPredictions, 
               saveImage, resizeImage, hasMask, mdiv
             )

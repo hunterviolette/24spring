@@ -97,8 +97,8 @@ class Preprocessing:
   def TorchGPU():
     import torch
 
-    return " ".join([
-        f"CUDA availability: {torch.cuda.is_available()}",
+    return ", ".join([
+        f"CUDA GPU enabled: {torch.cuda.is_available()}",
         f"CUDA version: {torch.version.cuda}"
       ])
 
