@@ -39,7 +39,6 @@ class Predictions(DashUtil):
             html.Br(),
             dcc.Dropdown(id='dataDirs', multi=False,
                         style=Predictions.Formatting('textStyle'),
-                        options=os.listdir(Predictions.dataPath)
                       ),
         ]),
         dbc.Col([
@@ -47,7 +46,6 @@ class Predictions(DashUtil):
             html.Br(),
             dcc.Dropdown(id='modelNames', multi=False,
                         style=Predictions.Formatting('textStyle'),
-                        options=os.listdir(Predictions.modelPath)
                       ),
         ]),
         dbc.Col([
@@ -95,6 +93,19 @@ class Predictions(DashUtil):
     ], className='mb-4', style=Predictions.Formatting('mdiv'))
 
   def callbacks(self):
+    @callback(
+      [Output("dataDirs", "options"),
+      Output("modelNames", 'options')],
+      Input("makePredictions", "n_clicks"),
+    )
+    def initPred(clicks):
+      if clicks == 0:
+        return (
+          os.listdir(Predictions.dataPath),
+          os.listdir(Predictions.modelPath)
+        )
+
+
     @callback(
       [Output("dataDirs", 'value'),
       Output("modelNames", 'value'),
