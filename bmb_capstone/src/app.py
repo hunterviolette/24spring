@@ -1,8 +1,17 @@
 import dash
 from dash import html, dcc
 import dash_bootstrap_components as dbc
-print("App starting")
 
+print("init volume directories")
+from pages.util.util import Preprocessing 
+
+for dir in ["image_data", "image_loader", 
+            "models", "predictions", "stats"]:
+    
+    Preprocessing.initDir(f"vol/{dir}")
+    
+
+print("App starting")
 app = dash.Dash(__name__, use_pages=True, external_stylesheets=[dbc.themes.SUPERHERO])
 server = app.server
 

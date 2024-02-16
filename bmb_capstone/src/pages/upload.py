@@ -190,7 +190,8 @@ class Upload(DashUtil, Preprocessing):
           for file in fileList:
             os.remove(f"{Upload.load_dir}/{file}")
         
-        if val and len(fileDict.keys())*2 == fullVal: WriteWrap()
+        if val and len(fileDict.keys())*2 == fullVal and hasMask: WriteWrap()
+        elif val and len(fileDict.keys()) and not hasMask == fullVal: WriteWrap()
         elif not val and len(fileDict.keys()) > 1: WriteWrap()
         else: mdiv.append(html.H2(f"not writing to {tag}, not clearing load_images",
                                   className=Upload.Formatting(color='success')))
@@ -201,8 +202,8 @@ class Upload(DashUtil, Preprocessing):
         rSize = (450, 450)
         for key in fileDict.keys():
           rImg = resize(fileDict[key]["img"], rSize)
-          # Resize img/mask so its easier to render
-          if hasMask:
+          
+          if hasMask: # Resizing mask is failing for some reason
             rMask = fileDict[key]["mask"] #resize(fileDict[key]["mask"], rSize)
 
             mdiv.extend([

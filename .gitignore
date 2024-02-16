@@ -1,4 +1,6 @@
 venv/
 __pycache__/
 .vscode/
-vol/
+bmb_capstone/vol/models/test_models
+bmb_capstone/vol/image_data
+bmb_capstone/vol/predictions/*
