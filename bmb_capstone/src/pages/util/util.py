@@ -5,9 +5,28 @@ import os
 from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
 from scipy.ndimage import label 
-from dash import dcc
+from dash import dcc, dash_table
 
 class DashUtil:
+
+  @staticmethod
+  def DarkDashTable(df, rows: int = 30):
+    return dash_table.DataTable(
+            data = df.to_dict('records'),
+            columns = [{'name': i, 'id': i} for i in df.columns],
+            export_format="csv",
+            sort_action='native', 
+            page_size=rows,
+            filter_action='native',
+            style_header={'backgroundColor': 'rgb(30, 30, 30)', 'color': 'white'},
+            style_data={'backgroundColor': 'rgb(50, 50, 50)','color': 'white'},
+            style_table={'overflowX': 'auto'},
+            style_cell={
+                'height': 'auto',
+                'minWidth': '70px', 'width': '70px', 'maxWidth': '180px',
+                'whiteSpace': 'normal'
+              }
+          ) 
 
   @staticmethod
   def PlotImage(img: np.ndarray, colorscale: str = 'greys') -> dcc.Graph:

@@ -53,7 +53,7 @@ class Schmoo(Preprocessing):
     print('=== init data generator ===')
     if directoryPath == None: directory = self.data_dir
     else: directory = directoryPath
-
+    
     for x in [f for f in os.listdir(directory) if f.endswith(('.tif', '.png'))]:
       if maskRequired:
         if not "mask" in x:
@@ -79,8 +79,7 @@ class Schmoo(Preprocessing):
                       maskRequired: bool = True
                     ):
     
-    if isinstance(directories, str): 
-      directories = list([directories])
+    if isinstance(directories, str): directories = [directories]
     
     self.bigGen = {}
     for directory in directories:
@@ -98,7 +97,7 @@ class Schmoo(Preprocessing):
 
   def DataGenInstance(self,
                       maskRequired: bool = True,
-                      bigGen: Optional[List[Union[str, List[str], None]]] = None,
+                      bigGen: Optional[Union[str, List[str], None]] = None,
                     ):
     
     if bigGen != None: Schmoo.BigDataGenerator(self, bigGen, maskRequired)
@@ -351,15 +350,27 @@ class Schmoo(Preprocessing):
   def BatchEval(self, 
                 modelDir: str = './vol/models',
                 numPredictions: Optional[int] = None,
-                diamMeans: List[int] = [30, 80],
-                saveCsv: bool = False
+                diamMeans: Union[List[int], int] = [30, 80],
+                saveCsv: bool = False,
+                testModels: List[str] = None,
+                imageDir: Union[str, List[str], None] = None
               ):
     
-    Schmoo.DataGenInstance(self)
+    if isinstance(diamMeans, int): diamMeans = [diamMeans]
+    
+    Schmoo.DataGenInstance(self, maskRequired=True, bigGen=imageDir)
     
     df = pd.DataFrame()
-    print(os.listdir(modelDir))
-    modelList = [f for f in os.listdir(modelDir) if f != 'test_models']
+    modelList = [f for f in os.listdir(modelDir) 
+                 if not os.path.isdir(f"{modelDir}/{f}")]
+    
+    if isinstance(testModels, list):
+      for tmodels in testModels:     
+        modelList.extend(
+                    [f"{tmodels}/{f}" for f in os.listdir(f"{modelDir}"/{tmodels}) 
+                    if not os.path.isdir(f"{modelDir}/{tmodels}/{f}")]
+                  )
+      
     for name, diamMean in product(modelList, diamMeans):
 
       self.cellposeModel = models.CellposeModel(
@@ -375,7 +386,7 @@ class Schmoo(Preprocessing):
                         modelPath=modelDir
                       )
       
-      df = pd.concat([df, pd.DataFrame({'AJI': [ret[1]]}, 
+      df = pd.concat([df, pd.DataFrame({'AJI': [ret[1]],}, 
                       index=[f"dm{diamMean}_{name}"])])
     
     df = df['AJI'].apply(lambda x: pd.Series(x).describe()
@@ -384,10 +395,11 @@ class Schmoo(Preprocessing):
     if saveCsv: 
       df.to_csv(f"{modelDir.split('/')[-1]}_{str(time()).split('.')[1]}.csv")
 
-    self.evalDF = df
     timeElapsed = ((time() - self.timeStart) / 60).__round__(2)
     print(f"=== AJI Dataframe after {timeElapsed} minutes===", 
           df, '=== ===', sep='\n')
+    
+    return df
 
   def BatchLoop(self, modelDir: str = '../models/original_30diam_3step'):
     
