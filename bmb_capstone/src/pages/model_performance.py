@@ -103,6 +103,13 @@ class ModelPerformance(DashUtil, Preprocessing):
                           imageDir=data
                         )
         
+        df = df.astype({
+                "average precision": 'float64',
+                "true positives": 'float64',
+                "false negatives": 'float64',
+                "false positives": 'float64',
+              })
+        
         aggs = {"jaccard index": ["count", 'mean', 'std'],
                 "euclidean normalized rmse": ['mean'],
                 "structural similarity": ['mean'],
@@ -114,31 +121,29 @@ class ModelPerformance(DashUtil, Preprocessing):
         
         mdf = df.groupby(by=["model", "diam mean"], as_index=True
                         ).agg(aggs).reset_index().round(5)
-        
-        #kdf = df.groupby(by=["key", "diam mean", "model"], as_index=True
-        #                 ).agg(aggs).reset_index()
                 
         for x in [
-            ["Group by model and diameter mean", mdf],
-            #["Group by key and diameter mean", kdf],
-            ["Base data", df]
-          ]:
-          
+              ["Group by model and diameter mean", mdf],
+              ["Base data", df]
+            ]:
+            
           d = x[1]
           if x[0] == "Base data":
-            d = d.sort_values("jaccard index", ascending=False).round(5)
+            d = d.sort_values("jaccard index", ascending=False)
+          
           else:
             d.columns = d.columns.map(' '.join)
             d = d.sort_values("jaccard index mean", ascending=False
-                            ).round(5
-                            ).rename(columns={"jaccard index count": 'sample size'})
+                ).rename(columns={"jaccard index count": 'sample size'})
           
+          print(d.dtypes)
+
           mdiv.extend([
               
               html.H3(x[0], 
                 className=ModelPerformance.Formatting(color='primary')),
               
-              ModelPerformance.DarkDashTable(d),
+              ModelPerformance.DarkDashTable(d.round(4)),
             ])
         
       return (images, testModels, numPred, mdiv)      

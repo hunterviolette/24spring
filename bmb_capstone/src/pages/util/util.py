@@ -144,26 +144,16 @@ class Preprocessing:
 
   @staticmethod
   def PixelAccuracy(mask, pmask):
-      # Count the number of matching pixels
-      correct_pixels = np.sum(mask == pmask)
-      
-      # Total number of pixels
-      total_pixels = mask.size
-      
-      # Calculate pixel accuracy
-      return correct_pixels / total_pixels
+      return np.sum(mask == pmask) / mask.size
 
   @staticmethod
   def DiceCoefficient(mask, pmask):
-      # Flatten masks to vectors
       mask = mask.flatten()
       pmask = pmask.flatten()
       
-      # Calculate intersection and union
       intersection = np.sum(mask * pmask)
       union = np.sum(mask) + np.sum(pmask)
       
-      # Calc Dice coefficient, add small value to avoid divison by 0
       return (2.0 * intersection) / (union + 1e-10)  
 
   @staticmethod
