@@ -183,6 +183,17 @@ class Preprocessing:
         f"CUDA version: {torch.version.cuda}"
       ])
 
+  @staticmethod
+  def ArrayCheck(z: np.ndarray, x: str):
+    if z.dtype == np.int32:
+      if np.any(z > np.iinfo(np.uint16).max):
+        print(f"Dataloss may occur for {x} conversion: int32 -> uint16")
+      else: 
+        print(f"Coverted {x} from uint32 to uint16")
+      return z.astype(np.uint16)
+    else: return z
+
+
 if __name__ == "__main__":
   gpuEnabled = True
 

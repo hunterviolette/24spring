@@ -129,11 +129,11 @@ class ModelPerformance(DashUtil, Preprocessing):
             
           d = x[1]
           if x[0] == "Base data":
-            d = d.sort_values("jaccard index", ascending=False)
+            d = d.sort_values("euclidean normalized rmse")
           
           else:
             d.columns = d.columns.map(' '.join)
-            d = d.sort_values("jaccard index mean", ascending=False
+            d = d.sort_values("euclidean normalized rmse mean",
                 ).rename(columns={"jaccard index count": 'sample size'})
           
           print(d.dtypes)

@@ -67,11 +67,17 @@ class Schmoo(Preprocessing):
             try: mask = pngRead(f"{directory}/{y}")
             except: raise Exception(f"Mask file not found for {x}")
 
-          self.dataGen[x] = {'img':img, 'mask':mask, 'pmask': None}
+          self.dataGen[x] = {
+                          'img':Schmoo.ArrayCheck(img, x), 
+                          'mask':Schmoo.ArrayCheck(mask, x), 
+                          'pmask': None
+                        }
       else:
         if not "mask" in x:
           img = imread(f"{directory}/{x}")
-          self.dataGen[x] = {'img':img, 'mask':None, 'pmask': None}
+          self.dataGen[x] = {
+                          'img':Schmoo.ArrayCheck(img, x), 
+                          'mask':None, 'pmask': None}
     
     print('=== returned data generator ===')
 
@@ -359,18 +365,23 @@ class Schmoo(Preprocessing):
         mask = Schmoo.DesegmentMask(row["mask"])
         pmask = Schmoo.DesegmentMask(row["pmask"])
         
+        structSim = ssim(mask, pmask, sigma=1.5,
+                        gaussian_weights=True,
+                        use_sample_covariance=False
+                      )
+
         df = pd.concat([df,
                         pd.DataFrame({
                           "model": [modelName],
                           "key": [key],
                           "euclidean normalized rmse": [nrmse(mask, pmask)],
-                          "structural similarity": [ssim(mask, pmask)],
+                          "structural similarity": [structSim],
                           "jaccard index": [aji[0]],
                           "average precision": [ap[0][0][0]],
                           "true positives": [ap[1][0][0]],
                           "false positives": [ap[2][0][0]],
                           "false negatives": [ap[3][0][0]],
-                        })], axis=0, ignore_index=True)
+                        })], axis=0, ignore_index=True) # type: ignore py3.11 trash
       return df
     else: 
       if not isinstance(trueMask, np.ndarray) and \
