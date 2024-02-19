@@ -251,21 +251,25 @@ class Schmoo(Preprocessing):
               saveImages: bool = False,
               figures: bool = True, # Return list of images 
               hasTruth: bool = False, # Has true masks for images 
-              modelPath: Optional[str] = None
+              modelPath: Optional[str] = None,
+              diamMean: Optional[int] = None,
             ):
     
     Schmoo.DataGenInstance(self, maskRequired=hasTruth)
 
-    if modelPath == None: dir = self.model_dir
+    if not isinstance(modelPath, str): dir = self.model_dir
     else: dir = modelPath
+
+    if isinstance(diamMean, int): diam = diamMean
+    else: diam = self.diam_mean
 
     if model_name in os.listdir(dir):
             
       if not hasattr(self, 'cellposeModel'):
+        print("no attribute for self.cellposeModel, creating")
         self.cellposeModel = models.CellposeModel(
                                       gpu=self.gpu,
                                       pretrained_model=f"{dir}/{model_name}",
-                                      diam_mean=self.diam_mean
                                     )
       
       print(f'Opened model: {model_name}')
@@ -279,16 +283,17 @@ class Schmoo(Preprocessing):
           
       fig, count = [], 0 
       for key in self.dataGen.keys():
-        img = self.dataGen[key]["img"]
+        row = self.dataGen[key]
+        mask, img = row["mask"], row["img"]
 
         pmask, flow, styles = self.cellposeModel.eval(
                                                   img,
                                                   channels=image_channels,
                                                   rescale=True,
-                                                  diameter=self.diam_mean
+                                                  diameter=diam
                                                 )
           
-        print(f"Generated mask for {key}")
+        print(f"Generated mask for {key}, with mean of {round(np.mean(pmask),2)}")
         self.dataGen[key]["pmask"] = pmask
                 
         if saveImages:
@@ -300,15 +305,18 @@ class Schmoo(Preprocessing):
             if imgResize == 0: pass
             else:
               tupleSize = (imgResize, imgResize)
-              img, pmask = resize(img, tupleSize), resize(pmask, tupleSize)
+              img = resize(img, tupleSize)
+              pmask = resize(pmask, tupleSize)
+              if hasTruth: mask = resize(mask, tupleSize)
 
           if hasTruth: fig.append([img, pmask, key, 
                                   Schmoo.Eval(self, 
                                               predMask=self.dataGen[key]["pmask"], 
                                               trueMask=self.dataGen[key]["mask"], 
                                               singleEval=True
-                                            )
-                                          ])
+                                            ),
+                                  mask
+                                          ], )
             
           else: fig.append([img, pmask, key])
 
@@ -317,12 +325,14 @@ class Schmoo(Preprocessing):
 
       if len(fig) > 0: return fig
 
-    else: raise Exception(f"{model_name}: not found in {dir}")
+    else: 
+      raise Exception(f"{model_name}: not found in {dir}")
   
   def Eval(self, 
           predMask: Optional[np.ndarray] = None,
           trueMask: Optional[np.ndarray] = None,
           numPredictions: Optional[int] = None,
+          diamMean: Optional[int] = None,
           modelName: Optional[str] = 'cyto_lr20_wd20000_ep100_7559516',
           singleEval: bool = False,
           modelPath: Optional[str] = None,
@@ -334,27 +344,36 @@ class Schmoo(Preprocessing):
       Schmoo.Predict(self, 
                     model_name=modelName,
                     numPredictions=numPredictions,
-                    modelPath=modelPath
+                    modelPath=modelPath,
+                    diamMean=diamMean,
                   )
       
       self.dataGen = {key: value for key, value in self.dataGen.items() 
                       if isinstance(value['pmask'], np.ndarray) and
-                         isinstance(value['mask'], np.ndarray)
+                        isinstance(value['mask'], np.ndarray)
                     }
       
       
       df = pd.DataFrame()
       for key in self.dataGen:
         row = self.dataGen[key]
-        mask = Schmoo.SegmentMask(Schmoo.DesegmentMask(row["mask"]))
-        pmask = Schmoo.SegmentMask(Schmoo.DesegmentMask(row["pmask"]))
+        aji = aggregated_jaccard_index([row["mask"]], [row["pmask"]])
+        ap = average_precision([row["mask"]], [row["pmask"]], threshold=[.5])
+        
+        mask = Schmoo.DesegmentMask(row["mask"])
+        pmask = Schmoo.DesegmentMask(row["pmask"])
         
         df = pd.concat([df,
                         pd.DataFrame({
                           "model": [modelName],
                           "key": [key],
-                          "nrmse": [nrmse(mask, pmask)],
-                          "ssim": [ssim(mask, pmask)]
+                          "euclidean normalized rmse": [nrmse(mask, pmask)],
+                          "structural similarity": [ssim(mask, pmask)],
+                          "jaccard index": [aji[0]],
+                          "average precision": [ap[0][0][0]],
+                          "true positives": [ap[1][0][0]],
+                          "false positives": [ap[2][0][0]],
+                          "false negatives": [ap[3][0][0]],
                         })], axis=0, ignore_index=True)
       return df
     else: 
@@ -381,14 +400,14 @@ class Schmoo(Preprocessing):
     Schmoo.DataGenInstance(self, maskRequired=True, bigGen=imageDir)
     
     modelList = [f for f in os.listdir(modelDir) 
-                 if not os.path.isdir(f"{modelDir}/{f}")]
+                if not os.path.isdir(f"{modelDir}/{f}")]
     
     if isinstance(testModels, list):
       for tmodels in testModels:     
         modelList.extend(
-                    [f"{tmodels}/{f}" for f in os.listdir(f"{modelDir}"/{tmodels}) 
-                    if not os.path.isdir(f"{modelDir}/{tmodels}/{f}")]
-                  )
+              [f"{tmodels}/{f}" for f in os.listdir(f"{modelDir}"/{tmodels}) 
+              if not os.path.isdir(f"{modelDir}/{tmodels}/{f}")]
+            )
     
     df = pd.DataFrame()
     for name, diamMean in product(modelList, diamMeans):
@@ -396,14 +415,16 @@ class Schmoo(Preprocessing):
       self.cellposeModel = models.CellposeModel(
                                     gpu=self.gpu,
                                     pretrained_model=f"{modelDir}/{name}",
-                                    diam_mean=diamMean
                                   )
+      
+      print(f"Setting self.cellposeModel to {diamMean} {name}")
       
       d = Schmoo.Eval(self,
                       numPredictions=numPredictions,
                       modelName=name,
                       singleEval=False,
-                      modelPath=modelDir
+                      modelPath=modelDir,
+                      diamMean=diamMean
                     )
     
       d["diam mean"] = diamMean

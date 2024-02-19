@@ -135,7 +135,7 @@ class Predictions(DashUtil, Preprocessing):
     def Predict(clicks: int, 
                 data_dir: str, 
                 model_name: str,
-                diam_mean: float,
+                diam_mean: int,
                 numPredictions: Optional[int],
                 saveImage: bool,
                 resizeImage: Optional[int],
@@ -154,13 +154,13 @@ class Predictions(DashUtil, Preprocessing):
         res = Schmoo(model_dir=Predictions.modelPath, 
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
                     predict_dir=Predictions.predictPath,
-                    diam_mean=diam_mean
                   ).Predict(
                           model_name=model_name, 
                           numPredictions=numPredictions,
                           saveImages=saveImage,
                           imgResize=resizeImage,
                           hasTruth=hasMask,
+                          diamMean=diam_mean
                         )
         
         if isinstance(res, list):
@@ -168,23 +168,46 @@ class Predictions(DashUtil, Preprocessing):
             if hasMask and isinstance(re[3], float): 
               aji = f" with Jaccard index value: {round(re[3], 4)}"
               ajiList.append(re[3])
-            else: aji = ""
 
-            mdiv.extend([
-                html.H3(f"Found {np.max(re[1])} cells for image {re[2]}{aji}",
-                        className=Predictions.Formatting()),
+              mdiv.extend([
+                  html.H3(f"Found {np.max(re[1])} cells for image {re[2]}{aji}",
+                          className=Predictions.Formatting()),
 
-                dbc.Row([
-                    dbc.Col([
-                        html.H4("Input image"),
-                        Predictions.PlotImage(re[0])
-                    ], width=6),
-                    dbc.Col([
-                        html.H4("Image with predicted mask overlay"),
-                        Predictions.TransparentImage(re[0], re[1], 'ice', True),
-                    ], width=6), 
-                ], align='justify'),
-            ])
+                  dbc.Row([
+                      dbc.Col([
+                          html.H4("True mask overlay"),
+                          Predictions.TI2(re[0], re[4]),
+                      ], width=4),
+                      dbc.Col([
+                          html.H4("Input image"),
+                          Predictions.PlotImage(re[0]),
+                      ], width=4), 
+                      dbc.Col([
+                          html.H4("Predicted mask overlay"),
+                          Predictions.TI2(re[0], re[1]),
+                      ], width=4), 
+
+                  ], align='justify'),
+                ])
+              
+            else: 
+              aji = ""
+
+              mdiv.extend([
+                  html.H3(f"Found {np.max(re[1])} cells for image {re[2]}{aji}",
+                          className=Predictions.Formatting()),
+
+                  dbc.Row([
+                      dbc.Col([
+                          html.H4("Input image"),
+                          Predictions.PlotImage(re[0]),
+                      ], width=6),
+                      dbc.Col([
+                          html.H4("Predicted mask overlay"),
+                          Predictions.TI2(re[0], re[1]),
+                      ], width=6), 
+                  ], align='justify'),
+                ])
 
                 
           if hasMask and len(ajiList) >0: 

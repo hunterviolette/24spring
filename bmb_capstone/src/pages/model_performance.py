@@ -22,6 +22,7 @@ register_page(__name__, suppress_callback_exceptions=True)
 class ModelPerformance(DashUtil, Preprocessing):
 
   modelPath = './vol/models'
+  tmodelsPath = f"{modelPath}/test_models"
   dataPath = './vol/image_data'
 
   def __init__(self) -> None:
@@ -72,8 +73,8 @@ class ModelPerformance(DashUtil, Preprocessing):
     def initMP(clicks):
       return (
         os.listdir(ModelPerformance.dataPath),
-        [x for x in os.listdir(ModelPerformance.modelPath) 
-          if os.path.isdir(f'{ModelPerformance.modelPath}/{x}')]
+        [x for x in os.listdir(ModelPerformance.tmodelsPath) 
+          if os.path.isdir(f'{ModelPerformance.tmodelsPath}/{x}')]
       ) 
       
     @callback(
@@ -83,8 +84,8 @@ class ModelPerformance(DashUtil, Preprocessing):
       Output("perf_mdiv", "children")],
       Input("perf_button", "n_clicks"),
       [State("perf_dataDir", "value"),
-       State("perf_testModels", "value"),
-       State("perf_num", "value")]
+      State("perf_testModels", "value"),
+      State("perf_num", "value")]
     )
     def maincb(clicks, images, testModels, numPred):
       mdiv = []
@@ -102,13 +103,18 @@ class ModelPerformance(DashUtil, Preprocessing):
                           imageDir=data
                         )
         
-        aggs = {"nrmse": ['min','mean', 'max', 'count'],
-                "ssim": ['min', 'mean', 'max'],
+        aggs = {"jaccard index": ["count", 'mean', 'std'],
+                "euclidean normalized rmse": ['mean'],
+                "structural similarity": ['mean'],
+                "average precision": ["mean"],
+                "true positives": ["mean"],
+                "false positives": ["mean"],
+                "false negatives": ["mean"]
               }
         
         mdf = df.groupby(by=["model", "diam mean"], as_index=True
-                         ).agg(aggs).reset_index()
-
+                        ).agg(aggs).reset_index().round(5)
+        
         #kdf = df.groupby(by=["key", "diam mean", "model"], as_index=True
         #                 ).agg(aggs).reset_index()
                 
@@ -120,10 +126,12 @@ class ModelPerformance(DashUtil, Preprocessing):
           
           d = x[1]
           if x[0] == "Base data":
-            d = d.sort_values("ssim").round(5)
+            d = d.sort_values("jaccard index", ascending=False).round(5)
           else:
-            d.columns = d.columns.map('_'.join)
-            d = d.sort_values("ssim_mean").round(5)
+            d.columns = d.columns.map(' '.join)
+            d = d.sort_values("jaccard index mean", ascending=False
+                            ).round(5
+                            ).rename(columns={"jaccard index count": 'sample size'})
           
           mdiv.extend([
               

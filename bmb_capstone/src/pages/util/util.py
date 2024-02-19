@@ -4,8 +4,13 @@ import os
 
 from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
+from skimage.segmentation import mark_boundaries
 from scipy.ndimage import label 
 from dash import dcc, dash_table
+from PIL import Image
+
+import io
+import base64
 
 class DashUtil:
 
@@ -35,14 +40,33 @@ class DashUtil:
                           z=img, colorscale=colorscale
                         )).update_layout(
                               margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-                              height=450, width=650
+                              height=450, width=450
                         ))
+
+  @staticmethod
+  def PI2(img: np.ndarray) -> dcc.Graph:
+    buffer = io.BytesIO()
+    Image.fromarray(img
+        ).transpose(Image.FLIP_TOP_BOTTOM
+        ).save(buffer, format='PNG')
+
+    encoded_img = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+    figure = go.Figure(go.Image(source=f"data:image/png;base64,{encoded_img}"))
+
+    figure.update_layout(
+        margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
+        height=450, width=450
+    )
+
+    return dcc.Graph(figure=figure)
 
   @staticmethod
   def TransparentImage(img, mask, 
                       colorscale: str = 'emrld',
                       colorscale_interp: bool = False
                     ):
+    
     img, transparent_mask = img, mask.astype(float) 
     transparent_mask[transparent_mask == 0] = np.nan
 
@@ -60,6 +84,26 @@ class DashUtil:
                         margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
                         height=450, width=650)
                   )
+
+  @staticmethod
+  def TI2(img, mask):    
+    buffer = io.BytesIO()
+    Image.fromarray(
+            (mark_boundaries(img, mask)*255).astype(np.uint8)
+          ).transpose(Image.FLIP_TOP_BOTTOM
+          ).save(buffer, format="PNG")
+    
+    encImage = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    
+    figure = go.Figure()
+    figure.add_trace(go.Image(source=f"data:image/png;base64,{encImage}"))
+    
+    figure.update_layout(
+        margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
+        height=450, width=450
+    )
+
+    return dcc.Graph(figure=figure)
 
   @staticmethod
   def Formatting( 
