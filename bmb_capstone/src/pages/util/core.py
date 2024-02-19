@@ -11,10 +11,15 @@ from math import ceil
 
 from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
+from skimage.metrics import structural_similarity as ssim
+from skimage.metrics import normalized_root_mse as nrmse
+
 from cv2 import resize
 
 from cellpose import models
-from cellpose.metrics import aggregated_jaccard_index
+from skimage.metrics import normalized_root_mse as nrmse
+from skimage.metrics import structural_similarity as ssim
+from cellpose.metrics import aggregated_jaccard_index, average_precision
 from torch import load, save
 
 if __name__ == '__main__':
@@ -275,7 +280,6 @@ class Schmoo(Preprocessing):
       fig, count = [], 0 
       for key in self.dataGen.keys():
         img = self.dataGen[key]["img"]
-        mask = self.dataGen[key]["mask"]
 
         pmask, flow, styles = self.cellposeModel.eval(
                                                   img,
@@ -288,7 +292,7 @@ class Schmoo(Preprocessing):
         self.dataGen[key]["pmask"] = pmask
                 
         if saveImages:
-          imwrite(f"{savePath}/mask_{key}", pmask)
+          imwrite(f"{savePath}/{key.replace('.', '_mask.')}", pmask)
           print(f"Saved mask for {key}")
         
         if figures: 
@@ -301,7 +305,7 @@ class Schmoo(Preprocessing):
           if hasTruth: fig.append([img, pmask, key, 
                                   Schmoo.Eval(self, 
                                               predMask=self.dataGen[key]["pmask"], 
-                                              trueMask=mask, 
+                                              trueMask=self.dataGen[key]["mask"], 
                                               singleEval=True
                                             )
                                           ])
@@ -333,19 +337,35 @@ class Schmoo(Preprocessing):
                     modelPath=modelPath
                   )
       
-      self.dataGen = {key: value for key, value in self.dataGen.items() \
-                      if value['pmask'] is not None}
-
-      return [modelName,
-              aggregated_jaccard_index(
-                  Schmoo.DataGenList(self, 'mask'),
-                  Schmoo.DataGenList(self, 'pmask') 
-              )]
+      self.dataGen = {key: value for key, value in self.dataGen.items() 
+                      if isinstance(value['pmask'], np.ndarray) and
+                         isinstance(value['mask'], np.ndarray)
+                    }
+      
+      
+      df = pd.DataFrame()
+      for key in self.dataGen:
+        row = self.dataGen[key]
+        mask = Schmoo.SegmentMask(Schmoo.DesegmentMask(row["mask"]))
+        pmask = Schmoo.SegmentMask(Schmoo.DesegmentMask(row["pmask"]))
+        
+        df = pd.concat([df,
+                        pd.DataFrame({
+                          "model": [modelName],
+                          "key": [key],
+                          "nrmse": [nrmse(mask, pmask)],
+                          "ssim": [ssim(mask, pmask)]
+                        })], axis=0, ignore_index=True)
+      return df
     else: 
       if not isinstance(trueMask, np.ndarray) and \
         not isinstance(predMask, np.ndarray):
           return 0
-      return aggregated_jaccard_index([trueMask], [predMask])[0]
+      
+      return aggregated_jaccard_index(
+                  [Schmoo.DesegmentMask(trueMask)], 
+                  [Schmoo.DesegmentMask(predMask)]
+                )[0]
 
   def BatchEval(self, 
                 modelDir: str = './vol/models',
@@ -360,7 +380,6 @@ class Schmoo(Preprocessing):
     
     Schmoo.DataGenInstance(self, maskRequired=True, bigGen=imageDir)
     
-    df = pd.DataFrame()
     modelList = [f for f in os.listdir(modelDir) 
                  if not os.path.isdir(f"{modelDir}/{f}")]
     
@@ -370,7 +389,8 @@ class Schmoo(Preprocessing):
                     [f"{tmodels}/{f}" for f in os.listdir(f"{modelDir}"/{tmodels}) 
                     if not os.path.isdir(f"{modelDir}/{tmodels}/{f}")]
                   )
-      
+    
+    df = pd.DataFrame()
     for name, diamMean in product(modelList, diamMeans):
 
       self.cellposeModel = models.CellposeModel(
@@ -379,18 +399,15 @@ class Schmoo(Preprocessing):
                                     diam_mean=diamMean
                                   )
       
-      ret = Schmoo.Eval(self,
-                        numPredictions=numPredictions,
-                        modelName=name,
-                        singleEval=False,
-                        modelPath=modelDir
-                      )
-      
-      df = pd.concat([df, pd.DataFrame({'AJI': [ret[1]],}, 
-                      index=[f"dm{diamMean}_{name}"])])
+      d = Schmoo.Eval(self,
+                      numPredictions=numPredictions,
+                      modelName=name,
+                      singleEval=False,
+                      modelPath=modelDir
+                    )
     
-    df = df['AJI'].apply(lambda x: pd.Series(x).describe()
-                  ).sort_values('mean', ascending=False)
+      d["diam mean"] = diamMean
+      df = pd.concat([df, d], axis=0, ignore_index=True)
     
     if saveCsv: 
       df.to_csv(f"{modelDir.split('/')[-1]}_{str(time()).split('.')[1]}.csv")

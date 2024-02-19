@@ -1,9 +1,13 @@
 import numpy as np
+import pandas as pd
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 import os
 
 from dash import dcc, html, Input, Output, callback, State, dash_table, register_page
+
+pd.set_option('display.max_columns', None)
+pd.set_option('display.max_rows', None)
 
 if __name__ == '__main__':
     from util.util import Preprocessing, DashUtil
@@ -35,7 +39,6 @@ class ModelPerformance(DashUtil, Preprocessing):
               ]),
               dbc.Col([
                 html.H4("Add test models", style={'text-align': 'center'}),
-                html.Br(),
                 dcc.Dropdown(id='perf_testModels', multi=True, clearable=True,
                             style=ModelPerformance.Formatting('textStyle'),
                           ),
@@ -97,10 +100,38 @@ class ModelPerformance(DashUtil, Preprocessing):
                           saveCsv=False,
                           testModels=testModels,
                           imageDir=data
-                        ).round(3
-                        ).reset_index(drop=False)
-                        
-        mdiv.append(ModelPerformance.DarkDashTable(df))
+                        )
+        
+        aggs = {"nrmse": ['min','mean', 'max', 'count'],
+                "ssim": ['min', 'mean', 'max'],
+              }
+        
+        mdf = df.groupby(by=["model", "diam mean"], as_index=True
+                         ).agg(aggs).reset_index()
+
+        #kdf = df.groupby(by=["key", "diam mean", "model"], as_index=True
+        #                 ).agg(aggs).reset_index()
+                
+        for x in [
+            ["Group by model and diameter mean", mdf],
+            #["Group by key and diameter mean", kdf],
+            ["Base data", df]
+          ]:
+          
+          d = x[1]
+          if x[0] == "Base data":
+            d = d.sort_values("ssim").round(5)
+          else:
+            d.columns = d.columns.map('_'.join)
+            d = d.sort_values("ssim_mean").round(5)
+          
+          mdiv.extend([
+              
+              html.H3(x[0], 
+                className=ModelPerformance.Formatting(color='primary')),
+              
+              ModelPerformance.DarkDashTable(d),
+            ])
         
       return (images, testModels, numPred, mdiv)      
   

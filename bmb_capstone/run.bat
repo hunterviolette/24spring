@@ -9,5 +9,6 @@ if %errorlevel% neq 0 (
   echo Failed to start docker, please start docker manually
 )
 
+git pull
 docker-compose up --build
 echo turning off container
