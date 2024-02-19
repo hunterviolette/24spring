@@ -40,14 +40,12 @@ class Predictions(DashUtil, Preprocessing):
         ]),
         dbc.Col([
             html.H4("Models", style={'text-align': 'center'}),
-            html.Br(),
             dcc.Dropdown(id='modelNames', multi=False,
                         style=Predictions.Formatting('textStyle'),
                       ),
         ]),
         dbc.Col([
             html.H4("Save Images", style={'text-align': 'center'}),
-            html.Br(),
             dcc.Dropdown(id='saveImage', multi=False,
                 style=Predictions.Formatting('textStyle'),
                 options=[
@@ -72,22 +70,10 @@ class Predictions(DashUtil, Preprocessing):
         ]),
         dbc.Col([
             html.H4("Image resize", style={'text-align': 'center'}),
-            html.Br(),
             dcc.Input(id='resizeImage', type='number', value=450,
                       className=Predictions.Formatting('input'),
                       style=Predictions.Formatting('textStyle')
                     ),
-        ]),
-        dbc.Col([
-            html.H4("True mask", style={'text-align': 'center'}),
-            html.Br(),
-            dcc.Dropdown(id='predHasMask', multi=False, value=False,
-                style=Predictions.Formatting('textStyle'),
-                options=[
-                    {'label': 'True', 'value': True},
-                    {'label': 'False', 'value': False}
-                  ]
-                ),
         ]),
         dbc.Col([
             html.H4("Click for model predictions"),
@@ -119,7 +105,6 @@ class Predictions(DashUtil, Preprocessing):
       Output("numPredictions", 'value'),
       Output("saveImage", 'value'),
       Output('resizeImage', 'value'),
-      Output('predHasMask', 'value'),
       Output('predictionDiv', 'children'),
       ],
       Input("makePredictions", "n_clicks"),
@@ -129,7 +114,6 @@ class Predictions(DashUtil, Preprocessing):
       State("numPredictions", "value"),
       State("saveImage", "value"),
       State("resizeImage", "value"),
-      State('predHasMask', 'value'),
       ],
     )
     def Predict(clicks: int, 
@@ -139,18 +123,24 @@ class Predictions(DashUtil, Preprocessing):
                 numPredictions: Optional[int],
                 saveImage: bool,
                 resizeImage: Optional[int],
-                hasMask: bool
               ):
       
       print(clicks, data_dir, model_name, diam_mean, 
-            numPredictions, saveImage, resizeImage, hasMask,
+            numPredictions, saveImage, resizeImage,
             sep=' ')
 
       mdiv, ajiList = [], []
       mdiv.append(html.H2(Predictions.TorchGPU(), 
                   className=Predictions.Formatting(color='warning')))
       
-      if clicks > 0: 
+      if clicks > 0 and \
+          data_dir != None and \
+          model_name != None and \
+          diam_mean != None:
+
+        if "_nomask" in data_dir: hasMask = False
+        else: hasMask = True
+
         res = Schmoo(model_dir=Predictions.modelPath, 
                     data_dir=f"{Predictions.dataPath}/{data_dir}",
                     predict_dir=Predictions.predictPath,
@@ -260,16 +250,6 @@ class Predictions(DashUtil, Preprocessing):
                 Resizes the image and mask for quicker rendering
                 Default resize is (450, 450)
                 ```
-
-            7. True mask
-                ```
-                If True: 
-                  return jaccard index (JI) to quantify model performance
-                  JI > 0.75 appears to predict well
-                else:
-                  does not return stats on model performance
-                  Set to False if there is no True mask with the image
-                ```
             ''', 
           style={
               'backgroundColor': '#121212',
@@ -280,7 +260,7 @@ class Predictions(DashUtil, Preprocessing):
 
         mdiv.append(rules)
       return (data_dir, model_name, diam_mean, numPredictions, 
-              saveImage, resizeImage, hasMask, mdiv
+              saveImage, resizeImage, mdiv
             )
 
 x = Predictions()

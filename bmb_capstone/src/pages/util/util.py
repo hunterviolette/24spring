@@ -34,13 +34,14 @@ class DashUtil:
           ) 
 
   @staticmethod
-  def PlotImage(img: np.ndarray, colorscale: str = 'greys') -> dcc.Graph:
+  def PlotImage(img: np.ndarray, colorscale: str = 'greys',
+                h:int=450, w:int=450) -> dcc.Graph:
     return dcc.Graph(figure=go.Figure(
                         go.Heatmap(
                           z=img, colorscale=colorscale
                         )).update_layout(
                               margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-                              height=450, width=450
+                              height=h, width=w
                         ))
 
   @staticmethod
@@ -86,7 +87,7 @@ class DashUtil:
                   )
 
   @staticmethod
-  def TI2(img, mask):    
+  def TI2(img, mask, h:int=450, w:int=450):    
     buffer = io.BytesIO()
     Image.fromarray(
             (mark_boundaries(img, mask)*255).astype(np.uint8)
@@ -100,7 +101,7 @@ class DashUtil:
     
     figure.update_layout(
         margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-        height=450, width=450
+        height=h, width=w
     )
 
     return dcc.Graph(figure=figure)

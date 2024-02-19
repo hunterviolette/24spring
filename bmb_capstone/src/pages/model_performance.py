@@ -72,7 +72,8 @@ class ModelPerformance(DashUtil, Preprocessing):
     )
     def initMP(clicks):
       return (
-        os.listdir(ModelPerformance.dataPath),
+        [x for x in os.listdir(ModelPerformance.dataPath) 
+          if "_nomask" not in x],
         [x for x in os.listdir(ModelPerformance.tmodelsPath) 
           if os.path.isdir(f'{ModelPerformance.tmodelsPath}/{x}')]
       ) 

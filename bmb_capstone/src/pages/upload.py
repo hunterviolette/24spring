@@ -47,17 +47,6 @@ class Upload(DashUtil, Preprocessing):
                             ),
               ]),
               dbc.Col([
-                  html.H4("Segmented mask", style={'text-align': 'center'}),
-                  html.Br(),
-                  dcc.Dropdown(id='uploadSeg', multi=False,
-                      style=Upload.Formatting('textStyle'),
-                      options=[
-                          {'label': 'True', 'value': True},
-                          {'label': 'False', 'value': False}
-                        ]
-                      ),
-              ]),
-              dbc.Col([
                   html.H4("Complete validation", style={'text-align': 'center'}),
                   html.Br(),
                   dcc.Dropdown(id='uploadVal', multi=False,
@@ -86,18 +75,16 @@ class Upload(DashUtil, Preprocessing):
       [Output('upload_mdiv', 'children'),
       Output("uploadTag", 'value'),
       Output("uploadMask", 'value'),
-      Output("uploadSeg", 'value'),
       Output("uploadVal", 'value'),
       ],
       Input('uploadButton', 'n_clicks'),
       [State("uploadTag", "value"),
       State("uploadMask", "value"),
-      State("uploadSeg", "value"),
       State("uploadVal", 'value'),
       ],
     )
-    def update_output(clicks, tag, hasMask, segmented, val):
-      print(clicks, tag, hasMask, segmented, val, sep=', ')
+    def update_output(clicks, tag, hasMask, val):
+      print(clicks, tag, hasMask, val, sep=', ')
       mdiv = []
       mdiv.append(html.H2(Upload.TorchGPU(), 
                   className=Upload.Formatting(color='warning')))
@@ -105,9 +92,10 @@ class Upload(DashUtil, Preprocessing):
       if clicks > 0 and \
           tag != None and \
           hasMask != None and \
-          segmented != None and \
           val != None: 
         
+        if not hasMask: tag = f"{tag}_nomask"
+
         fileList = os.listdir(Upload.load_dir)
         if val: fullVal = len(fileList)
 
@@ -132,16 +120,20 @@ class Upload(DashUtil, Preprocessing):
             maskName = key.replace(".", "_mask.")
 
             if maskName in filefinder:
-              mask = Upload.ReadImage(filefinder[maskName], Upload.load_dir)
-              if not segmented: mask = Upload.SegmentMask(mask) # Hand-drawn imageJ masks
+              mask = Upload.SegmentMask( # accept both deseg and seg 
+                        Upload.DesegmentMask( # so always return a seg mask
+                          Upload.ReadImage(filefinder[maskName], Upload.load_dir)))
+              
               fileDict[key]["mask"] = mask
             else:
               if tif: name = maskName.replace(".tif", ".png")
               elif png: name = maskName.replace(".png", ".tif")
 
               if name in filefinder: 
-                mask = Upload.ReadImage(file, Upload.load_dir)
-                if not segmented: mask = Upload.SegmentMask(mask) # Hand-drawn imageJ masks
+                mask = Upload.SegmentMask( # accept both deseg and seg 
+                        Upload.DesegmentMask( # so always return a seg mask
+                          Upload.ReadImage(filefinder[name], Upload.load_dir)))
+                
                 fileDict[key]["mask"] = mask
               else: reject.append(
                             f"Could not find a mask file for "
@@ -161,8 +153,7 @@ class Upload(DashUtil, Preprocessing):
             for f in files:
               if isinstance(f[0], np.ndarray):
                 if len(f[0].shape) != 2:
-                  dm, shp = len(f[0].shape), f[0].shape 
-                  reject.append(f"{f[1]} has dimensions/shape of {dm}/{shp}, expected 2/(int, int)")
+                  reject.append(f"{f[1]}: {key} had {len(f[0].shape)} dimensions, expected 2")
                   popKeys.append(key)
               else:
                 reject.append(f"{f[1]} could not be opened: {key}")
@@ -191,7 +182,7 @@ class Upload(DashUtil, Preprocessing):
             os.remove(f"{Upload.load_dir}/{file}")
         
         if val and len(fileDict.keys())*2 == fullVal and hasMask: WriteWrap()
-        elif val and len(fileDict.keys()) and not hasMask == fullVal: WriteWrap()
+        elif val and len(fileDict.keys()) == fullVal and not hasMask: WriteWrap()
         elif not val and len(fileDict.keys()) > 1: WriteWrap()
         else: mdiv.append(html.H2(f"not writing to {tag}, not clearing load_images",
                                   className=Upload.Formatting(color='success')))
@@ -199,25 +190,21 @@ class Upload(DashUtil, Preprocessing):
         if hasMask: mdiv.append(html.H2("Accepted image/mask pairs:"))
         else: mdiv.append(html.H2("Accepted images:"))
 
-        rSize = (450, 450)
         for key in fileDict.keys():
-          rImg = resize(fileDict[key]["img"], rSize)
-          
-          if hasMask: # Resizing mask is failing for some reason
-            rMask = fileDict[key]["mask"] #resize(fileDict[key]["mask"], rSize)
-
+          ro = fileDict[key]
+          if hasMask:
             mdiv.extend([
                 html.H5(key),
                 dbc.Row([
                     dbc.Col([
-                        Upload.PlotImage(rImg)
+                        Upload.PlotImage(ro["img"], h=600, w=600)
                     ], width=6),
                     dbc.Col([
-                        Upload.PlotImage(rMask, 'emrld')
+                        Upload.TI2(ro["img"], ro["mask"], h=600, w=600)
                     ], width=6), 
                 ], align='justify'),
             ])
-          else: mdiv.extend([html.H5(key), Upload.PlotImage(rImg)])
+          else: mdiv.extend([html.H5(key), Upload.PlotImage(ro["img"], h=800, w=800)])
 
         if hasMask: mdiv.append(html.H2("Rejcted image/mask pairs:"))
         else: mdiv.append(html.H2("Rejected images:"))
@@ -243,13 +230,6 @@ class Upload(DashUtil, Preprocessing):
                 - Requires each image to have a mask and the mask name is the image name with _mask at the end
                 
                 - Example: image named 001.tif would have a mask named 001_mask.tif (or .png)
-              ```
-
-          3. Segmented Mask
-              ```
-              - if False: segments the mask
-              
-              *Note*: ImageJ mask are usually **NOT** segmented
               ```
 
           4. Complete Validation
@@ -280,7 +260,9 @@ class Upload(DashUtil, Preprocessing):
         '''
 
         mdiv.extend([rules])  
-      return (mdiv, tag, hasMask, segmented, val)        
+      
+      print("plotting...")
+      return (mdiv, tag, hasMask, val)        
 x = Upload()
 layout = x.layout()
 x.callbacks()

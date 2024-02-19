@@ -4,4 +4,5 @@ __pycache__/
 bmb_capstone/vol/image_data
 bmb_capstone/vol/predictions/*
 bmb_capstone/vol/sample
+bmb_capstone/vol/image_loader
 bmb_capstone/vol/models/*/
