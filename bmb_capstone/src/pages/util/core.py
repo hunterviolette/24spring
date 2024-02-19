@@ -13,14 +13,10 @@ from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import normalized_root_mse as nrmse
-
-from cv2 import resize
-
-from cellpose import models
-from skimage.metrics import normalized_root_mse as nrmse
-from skimage.metrics import structural_similarity as ssim
 from cellpose.metrics import aggregated_jaccard_index, average_precision
+from cellpose import models
 from torch import load, save
+from cv2 import resize
 
 if __name__ == '__main__':
     from util import Preprocessing
