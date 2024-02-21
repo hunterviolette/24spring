@@ -43,8 +43,8 @@ class q4:
     Assume water has a specific heat of 4.2 kJ/kg/K.
     '''
     flow = (self.q(50, 'L/s') * self.q(1e3, 'kg/m**3')).to('kg/s')
-    dT = self.q(85 - 30, 'degC')
-    cp = self.q(4.2, 'kJ/kg/degK')
+    dT = self.q(85, 'degC') - self.q(30, 'degC')
+    cp = self.q(4.2, 'kJ/kg/K')
 
     q4.printr(
       (flow * cp * dT).to('MW')
