@@ -90,7 +90,7 @@ class DashUtil:
   def TI2(img, mask, h:int=450, w:int=450):    
     buffer = io.BytesIO()
     Image.fromarray(
-            (mark_boundaries(img, mask)*255).astype(np.uint8)
+            (mark_boundaries(img, mask, mode='thick')*255).astype(np.uint8)
           ).transpose(Image.FLIP_TOP_BOTTOM
           ).save(buffer, format="PNG")
     

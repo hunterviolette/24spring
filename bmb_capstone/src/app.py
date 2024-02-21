@@ -5,8 +5,8 @@ import dash_bootstrap_components as dbc
 print("init volume directories")
 from pages.util.util import Preprocessing 
 
-for dir in ["image_data", "image_loader", 
-            "models", "predictions", "stats"]:
+for dir in ["image_data", "image_loader", "stats", 
+            "models", "models/test_models", "predictions"]:
     
     Preprocessing.initDir(f"vol/{dir}")
     

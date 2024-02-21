@@ -45,8 +45,8 @@ class Predictions(DashUtil, Preprocessing):
                       ),
         ]),
         dbc.Col([
-            html.H4("Save Images", style={'text-align': 'center'}),
-            dcc.Dropdown(id='saveImage', multi=False,
+            html.H4("Save Masks", style={'text-align': 'center'}),
+            dcc.Dropdown(id='saveImage', multi=False, value=False,
                 style=Predictions.Formatting('textStyle'),
                 options=[
                     {'label': 'True', 'value': True},
@@ -190,23 +190,23 @@ class Predictions(DashUtil, Preprocessing):
                   dbc.Row([
                       dbc.Col([
                           html.H4("Input image"),
-                          Predictions.PlotImage(re[0]),
+                          Predictions.PlotImage(re[0], w=650),
                       ], width=6),
                       dbc.Col([
                           html.H4("Predicted mask overlay"),
-                          Predictions.TI2(re[0], re[1]),
+                          Predictions.TI2(re[0], re[1], w=650),
                       ], width=6), 
                   ], align='justify'),
                 ])
 
                 
           if hasMask and len(ajiList) >0: 
-            mdiv.insert(1, # append to 0 index
+            mdiv.insert(1, # append to 1 index
                         html.H4(f"Mean Jaccard index: {round(sum(ajiList)/len(ajiList),4)}", 
                                 className=Predictions.Formatting(color='primary')
                         )
                       )
-            mdiv.insert(1, # append to 0 index
+            mdiv.insert(1, # append to 1 index
                         html.H2(f"{[round(x, 4) for x in ajiList]}", 
                                 className=Predictions.Formatting(color='primary')
                         )

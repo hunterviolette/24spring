@@ -160,7 +160,7 @@ class Upload(DashUtil, Preprocessing):
                 popKeys.append(key)
         
           if len(popKeys) > 0:
-            print(popKeys)
+            print(f"{popKeys} removed from dataGen")
             for key in list(set(popKeys)): fileDict.pop(key)
         
         def WriteWrap():
@@ -197,14 +197,14 @@ class Upload(DashUtil, Preprocessing):
                 html.H5(key),
                 dbc.Row([
                     dbc.Col([
-                        Upload.PlotImage(ro["img"], h=600, w=600)
+                        Upload.PlotImage(ro["img"], h=600, w=650)
                     ], width=6),
                     dbc.Col([
-                        Upload.TI2(ro["img"], ro["mask"], h=600, w=600)
+                        Upload.TI2(ro["img"], ro["mask"], h=600, w=650)
                     ], width=6), 
                 ], align='justify'),
             ])
-          else: mdiv.extend([html.H5(key), Upload.PlotImage(ro["img"], h=800, w=800)])
+          else: mdiv.extend([html.H5(key), Upload.PlotImage(ro["img"], h=600, w=800)])
 
         if hasMask: mdiv.append(html.H2("Rejcted image/mask pairs:"))
         else: mdiv.append(html.H2("Rejected images:"))
