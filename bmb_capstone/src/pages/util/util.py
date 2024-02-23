@@ -138,7 +138,7 @@ class Preprocessing:
         fname = filename.split('/')[-1].split('.')[0]
         name = f'{writeDir}/{fname}_ch{channel}.tif'
         imwrite(
-          f'{name}.tif',
+          name, 
           img.get_image_data("CZYX", C=channel)[0, 0, :, :]
         )
         print(f"Wrote {name.split('/')[-1]} to {writeDir}")
