@@ -8,9 +8,11 @@ from skimage.segmentation import mark_boundaries
 from scipy.ndimage import label 
 from dash import dcc, dash_table
 from PIL import Image
+from aicsimageio import AICSImage
 
 import io
 import base64
+import os
 
 class DashUtil:
 
@@ -128,6 +130,19 @@ class DashUtil:
 
 class Preprocessing:
 
+  @staticmethod
+  def VsiToTif(readDir: str = '.', writeDir = '.'):
+    for filename in [f for f in os.listdir(readDir) if f.endswith('.vsi')]:
+      img = AICSImage(f"{readDir}/{filename}")
+      for channel in range(img.shape[0]):
+        fname = filename.split('/')[-1].split('.')[0]
+        name = f'{writeDir}/{fname}_ch{channel}.tif'
+        imwrite(
+          f'{name}.tif',
+          img.get_image_data("CZYX", C=channel)[0, 0, :, :]
+        )
+        print(f"Wrote {name.split('/')[-1]} to {writeDir}")
+        
   @staticmethod
   def ReadImage(name, directory):
     if ".tif" in name: return imread(f"{directory}/{name}") 
