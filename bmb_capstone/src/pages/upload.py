@@ -2,6 +2,7 @@ import numpy as np
 import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 import os
+import shutil
 
 from dash import dcc, html, Input, Output, callback, State, dash_table, register_page
 from tifffile import imwrite
@@ -94,16 +95,20 @@ class Upload(DashUtil, Preprocessing):
           hasMask != None and \
           val != None: 
         
-        if not hasMask: tag = f"{tag}_nomask"
+        if not hasMask: 
+          tag = f"{tag}_nomask"
+          Upload.VsiToTif(Upload.load_dir, f"vol/image_loader")
 
-        fileList = os.listdir(Upload.load_dir)
+        fileList = [f for f in os.listdir(Upload.load_dir) 
+                    if f.endswith(('.tif', '.png'))]
+        
         if val: fullVal = len(fileList)
 
         reject = []
         filefinder = {Upload.NameCleaner(f):f for f in fileList}
         
         fileDict = {}
-        for file in [f for f in fileList if f.endswith(('.tif', '.png'))]:
+        for file in fileList:
           try:
             name = str(Upload.NameCleaner(file))
 
@@ -178,8 +183,10 @@ class Upload(DashUtil, Preprocessing):
                   f"{Upload.image_dir}/{tag}/{key.replace('.', '_mask.')}", 
                   fileDict[key]["mask"])
     
-          for file in fileList:
-            os.remove(f"{Upload.load_dir}/{file}")
+          for item in os.listdir(Upload.load_dir):
+            path = os.path.join(Upload.load_dir, item)
+            if os.path.isfile(path): os.remove(path)
+            else: shutil.rmtree(path)
         
         if val and len(fileDict.keys())*2 == fullVal and hasMask: WriteWrap()
         elif val and len(fileDict.keys()) == fullVal and not hasMask: WriteWrap()
@@ -262,7 +269,8 @@ class Upload(DashUtil, Preprocessing):
         mdiv.extend([rules])  
       
       print("plotting...")
-      return (mdiv, tag, hasMask, val)        
+      return (mdiv, tag, hasMask, val)
+    
 x = Upload()
 layout = x.layout()
 x.callbacks()
