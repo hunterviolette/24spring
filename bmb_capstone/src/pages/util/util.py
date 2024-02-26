@@ -1,6 +1,8 @@
 import plotly.graph_objects as go
+import pandas as pd
 import numpy as np
 import os 
+import datetime
 
 from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
@@ -15,6 +17,23 @@ import base64
 import os
 
 class DashUtil:
+
+  @staticmethod
+  def EvalAggTransforms(df: pd.DataFrame):
+    df = df.groupby(by=["model", "diam mean"], as_index=True
+                        ).agg({"jaccard index": ["count", 'mean', 'std'],
+                                "euclidean normalized rmse": ['mean'],
+                                "structural similarity": ['mean'],
+                                "average precision": ["mean"],
+                                "true positives": ["mean"],
+                                "false positives": ["mean"],
+                                "false negatives": ["mean"]
+                        }).reset_index(
+                        ).round(5)  
+    df.columns = df.columns.map(' '.join)
+    return df.sort_values("euclidean normalized rmse mean",
+          ).rename(columns={"jaccard index count": 'sample size'})
+
 
   @staticmethod
   def DarkDashTable(df, rows: int = 30):
@@ -129,6 +148,12 @@ class DashUtil:
     else: raise Exception("className not found")
 
 class Preprocessing:
+
+  @staticmethod
+  def StrTime(asInt: bool = False):
+    x = int(datetime.datetime.utcnow().timestamp())
+    if asInt: return x
+    else: return str(x)
 
   @staticmethod
   def VsiToTif(readDir: str = '.', writeDir = '.'):

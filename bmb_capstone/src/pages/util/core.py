@@ -1,9 +1,9 @@
 import numpy as np
 import pandas as pd
+import datetime
 import os
+import time
 
-from time import time, sleep
-from datetime import datetime
 from typing import Optional, List, Union
 from itertools import product
 from functools import reduce
@@ -14,7 +14,8 @@ from skimage.io import imread as pngRead
 from skimage.metrics import structural_similarity as ssim
 from skimage.metrics import normalized_root_mse as nrmse
 from cellpose.metrics import aggregated_jaccard_index, average_precision
-from cellpose import models
+from cellpose.train import train_seg
+from cellpose import models 
 from torch import load, save
 from cv2 import resize
 
@@ -33,7 +34,7 @@ class Schmoo(Preprocessing):
               diam_mean: float = 30,
               ) -> None:
     
-    self.timeStart = time()
+    self.timeStart = Schmoo.StrTime(True)
     self.gpu = useGpu        
     self.model_dir = model_dir
     self.data_dir = data_dir
@@ -41,7 +42,7 @@ class Schmoo(Preprocessing):
     self.diam_mean = diam_mean
 
   def ElapsedTime(self):
-    deltaT = ((time() - self.timeStart)).__round__(2)
+    deltaT = ((Schmoo.StrTime(True) - self.timeStart)).__round__(2)
     if deltaT > 60: return f"{(deltaT/60).__round__(2)} minutes"
     else: return f"{deltaT} seconds"
   
@@ -114,7 +115,7 @@ class Schmoo(Preprocessing):
     if not hasattr(self, 'dataGen'): Schmoo.DataGenerator(self, maskRequired)
 
   def Train(self,
-            model_type: str = 'cyto',
+            model_type: str = 'cyto3',
             image_channels: list[int] = [0,0], # gray scale images
             learning_rate: float = .2,
             weight_decay: float = .00001,
@@ -125,48 +126,71 @@ class Schmoo(Preprocessing):
             rescale: bool = True,
             normalize: bool = True,
             savePath: str = './',
-            modelName: Optional[str] = None
+            modelName: Optional[str] = None,
+            diamMean: Optional[int] = None, 
+            bigGen: Optional[Union[list[str], str]] = None, # directories of images
           ):
-
-    Schmoo.DataGenInstance(self)
     
+    if isinstance(diamMean, int): diam = diamMean
+    else: diam = self.diam_mean
+
+    if modelName == None:
+      name = "_".join([model_type,
+                      f"lr{int(learning_rate*100)}",
+                      f"wd{int(weight_decay*100000)}",
+                      f"ep{n_epochs}", 
+                      f"dm{diam}",
+                      Schmoo.StrTime()
+                  ])
+    else: name = modelName
+
+    Schmoo.DataGenInstance(self, bigGen=bigGen)
     if not hasattr(self, 'cellposeModel'):
-      self.cellposeModel = models.CellposeModel(
-                                    gpu=self.gpu,
-                                    model_type=model_type,
-                                    diam_mean=self.diam_mean
-                                  )
-
+        print("no attribute for self.cellposeModel, creating")
+        self.cellposeModel = models.CellposeModel(
+                                      gpu=self.gpu,
+                                      model_type=model_type,
+                                      diam_mean=diam,
+                                      nchan=2
+                                    )
+                        
     print(f'=== init training model: {modelName} ===')
-    self.cellposeModel.train(
-                          train_data=Schmoo.DataGenList(self, 'img'), 
-                          train_labels=Schmoo.DataGenList(self, 'mask'),
-                          channels=image_channels, 
-                          learning_rate=learning_rate, 
-                          weight_decay=weight_decay, 
-                          n_epochs=n_epochs,
-                          normalize=normalize,
-                          rescale=rescale,
-                          save_every=save_every,
-                          min_train_masks=min_train_masks,
-                          save_path=savePath,
-                          model_name=modelName
-                        )
+    
+    train_seg(
+          self.cellposeModel.net,
+          train_data=Schmoo.DataGenList(self, 'img'), 
+          train_labels=Schmoo.DataGenList(self, 'mask'),
+          channels=image_channels, 
+          learning_rate=learning_rate, 
+          weight_decay=weight_decay, 
+          n_epochs=n_epochs,
+          normalize=normalize,
+          rescale=rescale,
+          save_every=save_every,
+          min_train_masks=min_train_masks,
+          save_path=savePath,
+          model_name=name
+        )
+    
+    if savePath != './models':
+      save(load(f"{savePath}/models/{name}"), f"{savePath}/{name}")
+      os.remove(f"{savePath}/models/{name}")
+    os.rmdir(f"{savePath}/models")
 
-    print(f"=== saved {modelName} to ./ after {Schmoo.ElapsedTime(self)} ===")
-    return modelName
+    print(f"=== saved {name} to {savePath} after {Schmoo.ElapsedTime(self)} ===")
+    return name
 
   def BatchTrain(self, 
-                savePath: str = './models',
+                savePath: str = './vol/models',
                 steps: int = 3,
-                sEpoch: int = 200,
+                sEpoch: int = 100,
                 eEpoch: int = 600,
                 sLearningRate: float = .2,
                 eLearningRate: float = .6,
                 sWeightDecay: float = .0001,
-                eWeightDecay: float = .01,
-                diamMeans: List[int] = [30],
-                baseModels: List[str] = ['cyto', 'cyto2'],
+                eWeightDecay: float = .005,
+                diamMeans: List[int] = [30, 80, 120],
+                baseModels: List[str] = ['cyto', 'cyto2', 'cyto3'],
                 dataPaths: List[Union[str, List[str]]] = ['./data/original'],
                 train: bool = False
               ):
@@ -190,60 +214,67 @@ class Schmoo(Preprocessing):
     
     print("\n".join([f"=== This will train {totalCount} models,", 
                     f"ctrl+C terminal within 5 seconds to cancel ==="]))
-    sleep(5)
+    time.sleep(5)
     print("=== Init batch training ===")
     
-    names = []
+    names, df = [], pd.DataFrame()
     for dpaths in dataPaths:
       Schmoo.BigDataGenerator(self, dpaths, True)
-      for baseModel in baseModels:
-        for diamMean in diamMeans: 
-          self.cellposeModel = models.CellposeModel(
-                                          gpu=self.gpu,
-                                          model_type=baseModel,
-                                          diam_mean=diamMean
-                                        )
+      for baseModel, diamMean in product(baseModels, diamMeans):
+        self.cellposeModel = models.CellposeModel(
+                                    gpu=self.gpu,
+                                    model_type=baseModel,
+                                    diam_mean=diamMean,
+                                    nchan=2
+                                  )
 
-          for dataPath, learningRate, weightDecay, numEpoch in product(
-              dataPaths, learningRates, weightDecays, numEpochs):
+        for dataPath, learningRate, weightDecay, numEpoch in product(
+            dataPaths, learningRates, weightDecays, numEpochs):
 
-            name = "_".join([baseModel,
-                            f"lr{int(learningRate*100)}",
-                            f"wd{int(weightDecay*100000)}",
-                            f"ep{numEpoch}", 
-                            f"dm{diamMean}",
-                            str(time()).split('.')[1]
-                        ])
+          name = "_".join([
+                    baseModel,
+                    f"lr{int(learningRate*100)}",
+                    f"wd{int(weightDecay*100000)}",
+                    f"ep{numEpoch}", 
+                    f"dm{diamMean}",
+                ])
 
-            print(f"Model {len(names)+1}/{totalCount}", 
-                  dataPath, baseModel, 
-                  learningRate, weightDecay, 
-                  numEpoch, sep=', ')
-            
-            names.append(name)
-            
-            Schmoo.Train(
-              self,
-              model_type=baseModel,
-              learning_rate=learningRate,
-              weight_decay=weightDecay,
-              n_epochs=numEpoch,
-              save_every=10000,
-              residual_on = True,
-              rescale = True,
-              normalize = True,
-              savePath = savePath,
-              modelName = name
-            )
+          print(f"Model {len(names)+1}/{totalCount}", 
+                dataPath, baseModel, 
+                learningRate, weightDecay, 
+                numEpoch, sep=', ')
+          
+          names.append(name)
+          
+          dname = f"{savePath}/{Schmoo.StrTime()}"
+          Schmoo.initDir(dname)
+          
+          Schmoo.Train(
+            self,
+            learning_rate=learningRate,
+            weight_decay=weightDecay,
+            n_epochs=numEpoch,
+            save_every=10000,
+            residual_on = True,
+            rescale = True,
+            normalize = True,
+            savePath = dname,
+            modelName = name
+          )
 
-        
-      if savePath != './models':
-        for name in names:
-          save(load(f"{savePath}/models/{name}"), f"{savePath}/{name}")
-          os.remove(f"{savePath}/models/{name}")
-        os.rmdir(f"{savePath}/models")
+          df = pd.concat([df, 
+                          pd.DataFrame({
+                            "name": [name],
+                            "learning rate": [learningRate],
+                            "weight decay": [weightDecay],
+                            "epochs": [numEpoch],
+                            "training sets": [str(dataPaths)],
+                            })
+                          ])
+      
         
       print(f'=== Finished training after {Schmoo.ElapsedTime(self)}')
+      return df, dname
 
   def Predict(self,
               model_name: str = 'cyto2torch_0',
@@ -262,74 +293,73 @@ class Schmoo(Preprocessing):
     if not isinstance(modelPath, str): dir = self.model_dir
     else: dir = modelPath
 
+    if "/" in model_name: path = model_name
+    elif model_name in os.listdir(dir): path = f"{dir}/{model_name}"
+    else: raise Exception(f"{model_name}: not found")
+
     if isinstance(diamMean, int): diam = diamMean
     else: diam = self.diam_mean
-
-    if model_name in os.listdir(dir):
             
-      if not hasattr(self, 'cellposeModel'):
-        print("no attribute for self.cellposeModel, creating")
-        self.cellposeModel = models.CellposeModel(
-                                      gpu=self.gpu,
-                                      pretrained_model=f"{dir}/{model_name}",
-                                    )
+    if not hasattr(self, 'cellposeModel'):
+      print("no attribute for self.cellposeModel, creating")
+      self.cellposeModel = models.CellposeModel(
+                                    gpu=self.gpu,
+                                    pretrained_model=path,
+                                  )
       
-      print(f'Opened model: {model_name}')
+    print(f'Opened model: {model_name}')
 
-      stringTime = datetime.now().strftime('%Y-%m-%d_%H').replace('-', '_')
-      savePath = f"{self.predict_dir}/{stringTime}"    
+    stringTime = datetime.datetime.now().strftime('%Y-%m-%d_%H').replace('-', '_')
+    savePath = f"{self.predict_dir}/{stringTime}"    
 
-      if (len(self.dataGen.keys()) > 0) and saveImages: 
-        Schmoo.initDir(savePath)
-        print(f"Saving images to: {savePath}")
-          
-      fig, count = [], 0 
-      for key in self.dataGen.keys():
-        row = self.dataGen[key]
-        mask, img = row["mask"], row["img"]
-
-        pmask, flow, styles = self.cellposeModel.eval(
-                                                  img,
-                                                  channels=image_channels,
-                                                  rescale=True,
-                                                  diameter=diam
-                                                )
-          
-        print(f"Generated mask for {key}, with mean of {round(np.mean(pmask),2)}")
-        self.dataGen[key]["pmask"] = pmask
-                
-        if saveImages:
-          imwrite(f"{savePath}/{key.replace('.', '_mask.')}", pmask)
-          print(f"Saved mask for {key}")
+    if (len(self.dataGen.keys()) > 0) and saveImages: 
+      Schmoo.initDir(savePath)
+      print(f"Saving images to: {savePath}")
         
-        if figures: 
-          if isinstance(imgResize, int):
-            if imgResize == 0: pass
-            else:
-              tupleSize = (imgResize, imgResize)
-              img = resize(img, tupleSize)
-              pmask = resize(pmask, tupleSize)
-              if hasTruth: mask = resize(mask, tupleSize)
+    fig, count = [], 0 
+    for key in self.dataGen.keys():
+      row = self.dataGen[key]
+      mask, img = row["mask"], row["img"]
 
-          if hasTruth: fig.append([img, pmask, key, 
-                                  Schmoo.Eval(self, 
-                                              predMask=self.dataGen[key]["pmask"], 
-                                              trueMask=self.dataGen[key]["mask"], 
-                                              singleEval=True
-                                            ),
-                                  mask
-                                          ], )
-            
-          else: fig.append([img, pmask, key])
+      pmask, flow, styles = self.cellposeModel.eval(
+                                                img,
+                                                channels=image_channels,
+                                                rescale=True,
+                                                diameter=diam
+                                              )
+        
+      print(f"Generated mask for {key}, with mean of {round(np.mean(pmask),2)}")
+      self.dataGen[key]["pmask"] = pmask
+              
+      if saveImages:
+        imwrite(f"{savePath}/{key.replace('.', '_mask.')}", pmask)
+        print(f"Saved mask for {key}")
+      
+      if figures: 
+        if isinstance(imgResize, int):
+          if imgResize == 0: pass
+          else:
+            tupleSize = (imgResize, imgResize)
+            img = resize(img, tupleSize)
+            pmask = resize(pmask, tupleSize)
+            if hasTruth: mask = resize(mask, tupleSize)
 
-        count += 1
-        if (numPredictions != None) and (count >= numPredictions): break 
+        if hasTruth: fig.append([img, pmask, key, 
+                                Schmoo.Eval(self, 
+                                            predMask=self.dataGen[key]["pmask"], 
+                                            trueMask=self.dataGen[key]["mask"], 
+                                            singleEval=True
+                                          ),
+                                mask
+                                        ], )
+          
+        else: fig.append([img, pmask, key])
 
-      if len(fig) > 0: return fig
+      count += 1
+      if (numPredictions != None) and (count >= numPredictions): break 
 
-    else: 
-      raise Exception(f"{model_name}: not found in {dir}")
-  
+    if len(fig) > 0: return fig
+
   def Eval(self, 
           predMask: Optional[np.ndarray] = None,
           trueMask: Optional[np.ndarray] = None,
@@ -372,7 +402,7 @@ class Schmoo(Preprocessing):
 
         df = pd.concat([df,
                         pd.DataFrame({
-                          "model": [modelName],
+                          "model": [modelName.split("/models/")[1]],
                           "key": [key],
                           "euclidean normalized rmse": [nrmse(mask, pmask)],
                           "structural similarity": [structSim],
@@ -398,7 +428,7 @@ class Schmoo(Preprocessing):
                 numPredictions: Optional[int] = None,
                 diamMeans: Union[List[int], int] = [30, 80],
                 saveCsv: bool = False,
-                testModels: List[str] = None,
+                testModels: Optional[str] = None,
                 imageDir: Union[str, List[str], None] = None
               ):
     
@@ -406,22 +436,21 @@ class Schmoo(Preprocessing):
     
     Schmoo.DataGenInstance(self, maskRequired=True, bigGen=imageDir)
     
-    modelList = [f for f in os.listdir(modelDir) 
-                if not os.path.isdir(f"{modelDir}/{f}")]
+    modelList = [f"{modelDir}/{f}" for f in os.listdir(modelDir) 
+                if os.path.isfile(f"{modelDir}/{f}")]
     
-    if isinstance(testModels, list):
-      for tmodels in testModels:     
+    if isinstance(testModels, str):
         modelList.extend(
-              [f"{tmodels}/{f}" for f in os.listdir(f"{modelDir}"/{tmodels}) 
-              if not os.path.isdir(f"{modelDir}/{tmodels}/{f}")]
-            )
-    
+              [f"{testModels}/{f}" for f in os.listdir(testModels) 
+              if os.path.isfile(f"{testModels}/{f}")
+            ])
+      
     df = pd.DataFrame()
     for name, diamMean in product(modelList, diamMeans):
 
       self.cellposeModel = models.CellposeModel(
                                     gpu=self.gpu,
-                                    pretrained_model=f"{modelDir}/{name}",
+                                    pretrained_model=name
                                   )
       
       print(f"Setting self.cellposeModel to {diamMean} {name}")
@@ -438,26 +467,31 @@ class Schmoo(Preprocessing):
       df = pd.concat([df, d], axis=0, ignore_index=True)
     
     if saveCsv: 
-      df.to_csv(f"{modelDir.split('/')[-1]}_{str(time()).split('.')[1]}.csv")
+      df.to_csv(f"{modelDir.split('/')[-1]}_{Schmoo.StrTime()}.csv")
 
-    timeElapsed = ((time() - self.timeStart) / 60).__round__(2)
+    timeElapsed = ((Schmoo.StrTime(True) - self.timeStart) / 60).__round__(2)
     print(f"=== AJI Dataframe after {timeElapsed} minutes===", 
           df, '=== ===', sep='\n')
     
-    return df
+    self.df = df.astype({
+                "average precision": 'float64',
+                "true positives": 'float64',
+                "false negatives": 'float64',
+                "false positives": 'float64',
+              }).sort_values("euclidean normalized rmse")
+    return self.df
 
-  def BatchLoop(self, modelDir: str = '../models/original_30diam_3step'):
+  def BatchLoop(self, testModels:str='test_models/original_30diam_3step'):
     
     Schmoo.BatchTrain(self,
-                      savePath=modelDir, 
+                      savePath=f"{self.model_dir}/{testModels}", 
                       steps=1,
                       train=True,
                     )
     
     Schmoo.BatchEval(self,
-                    modelDir=modelDir, 
-                    numPredictions=3, 
-                    saveCsv=True,
+                    diamMeans=[30,80,120], 
+                    testModels=testModels,
                   )
 
 if __name__ == "__main__":

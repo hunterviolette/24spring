@@ -40,7 +40,7 @@ class ModelPerformance(DashUtil, Preprocessing):
               ]),
               dbc.Col([
                 html.H4("Add test models", style={'text-align': 'center'}),
-                dcc.Dropdown(id='perf_testModels', multi=True, clearable=True,
+                dcc.Dropdown(id='perf_testModels', multi=False, clearable=True,
                             style=ModelPerformance.Formatting('textStyle'),
                           ),
               ]),
@@ -100,51 +100,20 @@ class ModelPerformance(DashUtil, Preprocessing):
                           numPredictions=numPred,
                           diamMeans=[30, 80],
                           saveCsv=False,
-                          testModels=testModels,
+                          testModels=f"{ModelPerformance.tmodelsPath}/{testModels}",
                           imageDir=data
                         )
-        
-        df = df.astype({
-                "average precision": 'float64',
-                "true positives": 'float64',
-                "false negatives": 'float64',
-                "false positives": 'float64',
-              })
-        
-        aggs = {"jaccard index": ["count", 'mean', 'std'],
-                "euclidean normalized rmse": ['mean'],
-                "structural similarity": ['mean'],
-                "average precision": ["mean"],
-                "true positives": ["mean"],
-                "false positives": ["mean"],
-                "false negatives": ["mean"]
-              }
-        
-        mdf = df.groupby(by=["model", "diam mean"], as_index=True
-                        ).agg(aggs).reset_index().round(5)
-                
         for x in [
-              ["Group by model and diameter mean", mdf],
-              ["Base data", df]
+          ["Group by model and diameter mean", ModelPerformance.EvalAggTransforms(df)],
+          ["Base data", df]
             ]:
-            
-          d = x[1]
-          if x[0] == "Base data":
-            d = d.sort_values("euclidean normalized rmse")
-          
-          else:
-            d.columns = d.columns.map(' '.join)
-            d = d.sort_values("euclidean normalized rmse mean",
-                ).rename(columns={"jaccard index count": 'sample size'})
-          
-          print(d.dtypes)
-
+                      
           mdiv.extend([
               
               html.H3(x[0], 
                 className=ModelPerformance.Formatting(color='primary')),
               
-              ModelPerformance.DarkDashTable(d.round(4)),
+              ModelPerformance.DarkDashTable(x[1].round(4)),
             ])
         
       return (images, testModels, numPred, mdiv)      

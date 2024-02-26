@@ -47,12 +47,12 @@ class Predictions(DashUtil, Preprocessing):
         dbc.Col([
             html.H4("Save Masks", style={'text-align': 'center'}),
             dcc.Dropdown(id='saveImage', multi=False, value=False,
-                style=Predictions.Formatting('textStyle'),
-                options=[
-                    {'label': 'True', 'value': True},
-                    {'label': 'False', 'value': False}
-                  ]
-                ),
+                              style=Predictions.Formatting('textStyle'),
+                              options=[
+                                  {'label': 'True', 'value': True},
+                                  {'label': 'False', 'value': False}
+                                ]
+                            ),
         ]),
         dbc.Col([
             html.H4("Diameter mean", style={'text-align': 'center'}),

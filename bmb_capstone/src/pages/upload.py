@@ -174,15 +174,19 @@ class Upload(DashUtil, Preprocessing):
           Upload.initDir(f"{Upload.image_dir}/{tag}")
 
           for key in fileDict.keys():
+            print(f"Writing {key} to {Upload.image_dir}/{tag}/")
             imwrite(
                 f"{Upload.image_dir}/{tag}/{key}", 
                 fileDict[key]["img"])
             
             if hasMask: 
+              k = key.replace('.', '_mask.')
+              print(f"Writing {k} to {Upload.image_dir}/{tag}/")
               imwrite(
-                  f"{Upload.image_dir}/{tag}/{key.replace('.', '_mask.')}", 
+                  f"{Upload.image_dir}/{tag}/{k}", 
                   fileDict[key]["mask"])
-    
+
+          print(f"Clearing {Upload.load_dir}")
           for item in os.listdir(Upload.load_dir):
             path = os.path.join(Upload.load_dir, item)
             if os.path.isfile(path): os.remove(path)
@@ -253,24 +257,11 @@ class Upload(DashUtil, Preprocessing):
           }
         )
 
-        '''
-        imgs = dbc.Row([
-                  dbc.Col([
-                      html.H4("Correctly labeled mask:"),
-                      Upload.PlotImage(pngRead('./pages/assets/segMask.png')),
-                  ], width=6),
-                  dbc.Col([
-                      html.H4("Inorrectly labeled mask:"),
-                      Upload.PlotImage(pngRead('./pages/assets/nonSegMask.png')),
-                  ], width=6), 
-              ], align='justify'),
-        '''
-
         mdiv.extend([rules])  
       
       print("plotting...")
       return (mdiv, tag, hasMask, val)
-    
+          
 x = Upload()
 layout = x.layout()
 x.callbacks()
