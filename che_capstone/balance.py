@@ -76,8 +76,6 @@ class Balance:
     print('=== ===',
           f"Target: {targetFlow} NH3 (stored)",
           f"NH3 metric ton per day: {(molph*targetMW*4).to('mtpd').__round__(4)}",
-          f"NH3 mass per hour: {(molph*targetMW*4).to('kg/h').__round__(4)}",
-          f"NH3 mols/h: {molph.__round__(5)}",
           '=== Overall Material Balance ===',
           self.ombal,
           '',
@@ -96,9 +94,9 @@ class Balance:
     mgcl2 = self.q(self.ombal.at[5, col], "mtpd")
 
     print('=== R-104 ===', 
-          f'Input: NH4Cl (g): {nh4cl}, Mg3N2 (s): {mg3n2}',
-          f'Output: MgCl2 (l): {mgcl2}, NH3 (g): {nh3}',
-          f'In Balance: {(nh3 + mgcl2 + nh4cl + mg3n2).__round__(4)}',
+          f'Input = NH4Cl (g): {nh4cl}, Mg3N2 (s): {mg3n2}',
+          f'Output = MgCl2 (l): {mgcl2}, NH3 (g): {nh3}',
+          f'(Output - Input) = {(nh3 + mgcl2 + nh4cl + mg3n2).__round__(4)}',
           f"NH3 (total/stored/recycled): {nh3}, {nh3*2/8}, {nh3*6/8}",
           '=== R-104 Design ===',
           f"NH3 Synthesis Rate: {nh3syn}",
