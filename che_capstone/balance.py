@@ -43,23 +43,24 @@ class Balance:
 
   def OverallMaterialBalance(self):
 
-    targetFlow = self.q(10, 'mtpd')
+    targetFlow = self.q(1, 'mtpd')
     targetMW = self.q(self.subs["NH3"].mass, 'gram/mol')
 
     molph = (targetFlow / targetMW).to('kmol/h')
     
     # rxn stoich
-    ## 3 MgCl2 + N2 + 3 H2O -> 2 NH3 + 1.5 O2 + 3 MgCl2
+    ## 3 MgCl2 + N2 + 3 H2O  + 6 NHCl4 -> 8 NH3 + 1.5 O2 + 3 MgCl2
     
     df = pd.DataFrame()
     for x in [[-3, "MgCl2"], [-1, "N2"], [-3, "H2O"],
-              [2, "NH3"], [1.5, "O2"], [3, "MgCl2"]]:
+              [8, "NH3"], [1.5, "O2"], [3, "MgCl2"],
+              [-6, "NH4Cl"], [-1, "Mg3N2"], [-6, "HCl"]]:
       
       mw = self.q(self.subs[x[1]].mass, 'gram/mol')
       stoich = x[0]
 
       molFlow = (molph / 2 * stoich).__round__(3)
-      massFlow = (molFlow * mw).to("kg/h").__round__(3)
+      massFlow = (molFlow * mw).to("mtpd").__round__(3)
 
       df = pd.concat([df,
                       pd.DataFrame({
@@ -67,15 +68,16 @@ class Balance:
                             "Stoch Coeff": [stoich],
                             "Molecular Weight (grams/mol)": [mw.magnitude],
                             "Component Flow (kmol/h)": [molFlow.magnitude],
-                            "Mass Flow (kg/h)": [massFlow.magnitude]
+                            "Mass Flow (mtpd)": [massFlow.magnitude],
+                            "Mass Flow (kg/h)": [massFlow.to('kg/h').magnitude]
                       })])
       
-    self.ombal = df.reset_index(drop=True) # Overall material balance
+    self.ombal = df.reset_index(drop=True).round(5).sort_values("Mass Flow (mtpd)")
     print('=== ===',
-          f"Target: {targetFlow}",
-          f"NH3 mass per day: {(molph*targetMW).to('kg/day').__round__(4)}",
-          f"NH3 mass per hour: {(molph*targetMW).to('kg/h').__round__(4)}",
-          f"NH3 mols/h: {molph.__round__(4)}",
+          f"Target: {targetFlow} NH3 (stored)",
+          f"NH3 metric ton per day: {(molph*targetMW*4).to('mtpd').__round__(4)}",
+          f"NH3 mass per hour: {(molph*targetMW*4).to('kg/h').__round__(4)}",
+          f"NH3 mols/h: {molph.__round__(5)}",
           '=== Overall Material Balance ===',
           self.ombal,
           '',
@@ -83,34 +85,23 @@ class Balance:
     
   def ReactorVolume(self):
     Balance.OverallMaterialBalance(self)
-    col = "Mass Flow (kg/h)"
-    
-    catalyst = self.q(self.ombal.at[5, col], 'kg/h')
-    nh3 = self.q(self.ombal.at[3, col] * 4, 'kg/h')
+    col = "Mass Flow (mtpd)"
 
     molFlow = self.q(self.ombal.at[3, 'Component Flow (kmol/h)'], 'kmol/h')
-
-    nh4cl = (molFlow * 6 / 8 * 
-              self.q(self.subs["NH4Cl"].mass, 'gram/mol')
-            ).to('kg/h')
-    
-    mg3n2 = (molFlow * 3 / 8 * 
-              self.q(self.subs["Mg3N2"].mass, 'gram/mol')
-            ).to('kg/h')
-
     nh3syn = self.q(10**-6, 'mol/cm**2/s')
 
-    print('=== Reactor Inputs ===', 
-          f'NH4Cl (g): {nh4cl.__round__(3)}',
-          f"Mg3N2 (s): {mg3n2.__round__(3)}",
-          '=== Reactor Outputs ===',
-          f'MgCl2 (l): {catalyst}',
-          f"NH3 (g): {nh3}",
-          '=== NH3 Production ===',
-          f"NH3 (total produced): {nh3.to('mtpd').__round__(3)}",
-          f"NH3 (stored): {(nh3 * 2 / 8).to('mtpd').__round__(3)}",
-          '=== Reactor Area ===',
-          f"NH3 Synthesis: {nh3syn}",
+    nh3 = self.q(self.ombal.at[3, col], 'mtpd')
+    nh4cl = self.q(self.ombal.at[6, col], "mtpd")
+    mg3n2 = self.q(self.ombal.at[7, col], "mtpd")
+    mgcl2 = self.q(self.ombal.at[5, col], "mtpd")
+
+    print('=== R-104 ===', 
+          f'Input: NH4Cl (g): {nh4cl}, Mg3N2 (s): {mg3n2}',
+          f'Output: MgCl2 (l): {mgcl2}, NH3 (g): {nh3}',
+          f'In Balance: {(nh3 + mgcl2 + nh4cl + mg3n2).__round__(4)}',
+          f"NH3 (total/stored/recycled): {nh3}, {nh3*2/8}, {nh3*6/8}",
+          '=== R-104 Design ===',
+          f"NH3 Synthesis Rate: {nh3syn}",
           f"Area (net): {(molFlow / nh3syn).to('m**2').__round__(3)}",
           f"Area (total): {(molFlow / nh3syn * 4).to('m**2').__round__(3)}",
           '',
