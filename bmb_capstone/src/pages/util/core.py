@@ -80,7 +80,8 @@ class Schmoo(Preprocessing):
                           'img':Schmoo.ArrayCheck(img, x), 
                           'mask':None, 'pmask': None}
     
-    print('=== returned data generator ===')
+    print(f'=== Returned dataGen with {len(self.dataGen.keys())} keys ===')
+    return self.dataGen
 
   def BigDataGenerator(self, 
                       directories: List[Union[str, List[str]]],
@@ -93,9 +94,11 @@ class Schmoo(Preprocessing):
     for directory in directories:
       Schmoo.DataGenerator(self, maskRequired, str(directory))
       self.bigGen.update(self.dataGen)
+
+    print(f"BigGen has {len(self.bigGen.keys())} keys")
     
   def DataGenList(self, 
-                  listType: str # Takes img, mask, pmask
+                  listType: str # accepts img, mask, pmask
                 ):
     if not hasattr(self, 'dataGen'): Schmoo.DataGenerator(self)    
 
@@ -216,7 +219,10 @@ class Schmoo(Preprocessing):
                     f"ctrl+C terminal within 5 seconds to cancel ==="]))
     time.sleep(5)
     print("=== Init batch training ===")
-    
+  
+    dname = f"{savePath}/{Schmoo.StrTime()}"
+    Schmoo.initDir(dname)
+
     names, df = [], pd.DataFrame()
     for dpaths in dataPaths:
       Schmoo.BigDataGenerator(self, dpaths, True)
@@ -245,9 +251,6 @@ class Schmoo(Preprocessing):
                 numEpoch, sep=', ')
           
           names.append(name)
-          
-          dname = f"{savePath}/{Schmoo.StrTime()}"
-          Schmoo.initDir(dname)
           
           Schmoo.Train(
             self,

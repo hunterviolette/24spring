@@ -33,6 +33,7 @@ class Generator(DashUtil, Preprocessing):
     return html.Div([
             dbc.Row([
               html.H2("Training Parameters", style={'text-align': 'center'}),
+              html.Br(),
 
               dbc.Col([
                 html.H4("Image directories", style={'text-align': 'center'}),
@@ -187,11 +188,13 @@ class Generator(DashUtil, Preprocessing):
           slr != None and \
           elr != None and \
           trDirs != None and \
-          teDirs != None:
+          teDirs != None and \
+          train:
                   
-
         trainDirs = [f"{Generator.dataPath}/{x}" for x in trDirs]
         testDirs = [f"{Generator.dataPath}/{x}" for x in teDirs]
+
+        if len(trainDirs) > 1: trainDirs = [trainDirs]
 
         x = Schmoo()
         
@@ -210,8 +213,11 @@ class Generator(DashUtil, Preprocessing):
                 train=train
               )
         
-        print(df)
-        mdiv.append(Generator.DarkDashTable(df))
+        mdiv.extend([
+              html.H2(f"Saved models to {modelsPath}", 
+                  className=Generator.Formatting(color='success')),
+              Generator.DarkDashTable(df),
+            ])
         
         df = x.BatchEval(
                 diamMeans=[30,80,120],

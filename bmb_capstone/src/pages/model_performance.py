@@ -95,12 +95,16 @@ class ModelPerformance(DashUtil, Preprocessing):
       
       if clicks > 0 and images != None:
         data = [f"{ModelPerformance.dataPath}/{x}" for x in images]
+
+        if testModels == None: tmodels = None
+        else: tmodels = f"{ModelPerformance.tmodelsPath}/{testModels}"
+
         df = Schmoo().BatchEval(
                           modelDir=ModelPerformance.modelPath,
                           numPredictions=numPred,
                           diamMeans=[30, 80],
                           saveCsv=False,
-                          testModels=f"{ModelPerformance.tmodelsPath}/{testModels}",
+                          testModels=tmodels,
                           imageDir=data
                         )
         for x in [
