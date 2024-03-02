@@ -205,6 +205,7 @@ class Preprocessing:
   @staticmethod
   def NameCleaner(file: str):
     file = file.lower(
+            ).replace("_cp_masks", "tmp"
             ).replace(" ", ""
             ).replace("_", ""         
             ).replace("groundtruth", "tmp"

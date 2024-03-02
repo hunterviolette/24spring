@@ -52,10 +52,11 @@ class Schmoo(Preprocessing):
                   ):
     
     self.dataGen = {}
-    print('=== init data generator ===')
     if directoryPath == None: directory = self.data_dir
     else: directory = directoryPath
-    
+    print(f'=== init data generator for {directory} ===')
+
+
     for x in [f for f in os.listdir(directory) if f.endswith(('.tif', '.png'))]:
       if maskRequired:
         if not "mask" in x:
@@ -95,7 +96,7 @@ class Schmoo(Preprocessing):
       Schmoo.DataGenerator(self, maskRequired, str(directory))
       self.bigGen.update(self.dataGen)
 
-    print(f"BigGen has {len(self.bigGen.keys())} keys")
+    print(f"intialized BigGen with {len(self.bigGen.keys())} keys")
     
   def DataGenList(self, 
                   listType: str # accepts img, mask, pmask
@@ -220,7 +221,8 @@ class Schmoo(Preprocessing):
     time.sleep(5)
     print("=== Init batch training ===")
   
-    dname = f"{savePath}/{Schmoo.StrTime()}"
+    initTime = Schmoo.StrTime()
+    dname = f"{savePath}/{initTime}"
     Schmoo.initDir(dname)
 
     names, df = [], pd.DataFrame()
@@ -243,6 +245,7 @@ class Schmoo(Preprocessing):
                     f"wd{int(weightDecay*100000)}",
                     f"ep{numEpoch}", 
                     f"dm{diamMean}",
+                    initTime,
                 ])
 
           print(f"Model {len(names)+1}/{totalCount}", 
@@ -335,6 +338,7 @@ class Schmoo(Preprocessing):
       self.dataGen[key]["pmask"] = pmask
               
       if saveImages:
+        imwrite(f"{savePath}/{key}", img)
         imwrite(f"{savePath}/{key.replace('.', '_mask.')}", pmask)
         print(f"Saved mask for {key}")
       
@@ -430,7 +434,6 @@ class Schmoo(Preprocessing):
                 modelDir: str = './vol/models',
                 numPredictions: Optional[int] = None,
                 diamMeans: Union[List[int], int] = [30, 80],
-                saveCsv: bool = False,
                 testModels: Optional[str] = None,
                 imageDir: Union[str, List[str], None] = None
               ):
@@ -445,7 +448,8 @@ class Schmoo(Preprocessing):
     if isinstance(testModels, str):
         modelList.extend(
               [f"{testModels}/{f}" for f in os.listdir(testModels) 
-              if os.path.isfile(f"{testModels}/{f}")
+              if os.path.isfile(f"{testModels}/{f}") and
+              not f.endswith('.csv')
             ])
       
     df = pd.DataFrame()
@@ -469,8 +473,7 @@ class Schmoo(Preprocessing):
       d["diam mean"] = diamMean
       df = pd.concat([df, d], axis=0, ignore_index=True)
     
-    if saveCsv: 
-      df.to_csv(f"{modelDir.split('/')[-1]}_{Schmoo.StrTime()}.csv")
+    df["predicted dirs"] = str(imageDir)
 
     timeElapsed = ((Schmoo.StrTime(True) - self.timeStart) / 60).__round__(2)
     print(f"=== AJI Dataframe after {timeElapsed} minutes===", 

@@ -169,6 +169,13 @@ class Upload(DashUtil, Preprocessing):
             for key in list(set(popKeys)): fileDict.pop(key)
         
         def WriteWrap():
+          if hasMask: 
+            if tag + "_nomask" in [
+                      x for x in os.listdir(Upload.image_dir)
+                      if os.path.isdir(f"{Upload.image_dir}/{x}")
+                    
+                    ]: shutil.rmtree(f"{Upload.image_dir}/{tag}_nomask")
+
           mdiv.append(html.H2(f"Writing directory {tag} and clearing load_images",
                               className=Upload.Formatting(color='success')))
           Upload.initDir(f"{Upload.image_dir}/{tag}")

@@ -147,7 +147,8 @@ class ViewDir(DashUtil, Preprocessing):
                 ViewDir.PlotImage(img),
               ], width=12)
             
-            if i+1 >= numPredictions: break
+            if isinstance(numPredictions, int):
+              if i+1 >= numPredictions: break
 
         
         print('plotting...')

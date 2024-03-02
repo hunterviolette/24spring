@@ -212,10 +212,11 @@ class Generator(DashUtil, Preprocessing):
                 dataPaths=trainDirs,
                 train=train
               )
+        df.to_csv(f"{modelsPath}/parameters.csv")
         
         mdiv.extend([
               html.H2(f"Saved models to {modelsPath}", 
-                  className=Generator.Formatting(color='success')),
+                  className=Generator.Formatting(color='info')),
               Generator.DarkDashTable(df),
             ])
         
@@ -224,9 +225,13 @@ class Generator(DashUtil, Preprocessing):
                 imageDir=testDirs,
                 testModels=modelsPath
               )
+        df.to_csv(f"{modelsPath}/results.csv")
+        
+        adf = Generator.EvalAggTransforms(df)
+        adf.to_csv(f"{modelsPath}/agg_results.csv")
+        
         mdiv.extend([
-                Generator.DarkDashTable(
-                  Generator.EvalAggTransforms(df)),
+                Generator.DarkDashTable(adf),
                 
                 Generator.DarkDashTable(df),
               ])
