@@ -129,11 +129,11 @@ class ViewDir(DashUtil, Preprocessing):
                 dbc.Row([
                     dbc.Col([
                         html.H4("True mask overlay"),
-                        ViewDir.TI2(img, mask),
+                        ViewDir.TI2(img, mask, w=800),
                     ], width=6),
                     dbc.Col([
                         html.H4("Input image"),
-                        ViewDir.PlotImage(img),
+                        ViewDir.PlotImage(img, w=800),
                     ], width=6), 
 
                 ], align='justify'),
@@ -144,7 +144,7 @@ class ViewDir(DashUtil, Preprocessing):
                 html.H3(f"Image filename: {key}",
                         className=ViewDir.Formatting()),
                 
-                ViewDir.PlotImage(img),
+                ViewDir.PlotImage(img, w=800),
               ], width=12)
             
             if isinstance(numPredictions, int):

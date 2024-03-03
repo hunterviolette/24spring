@@ -86,7 +86,8 @@ class DashUtil:
   @staticmethod
   def TransparentImage(img, mask, 
                       colorscale: str = 'emrld',
-                      colorscale_interp: bool = False
+                      colorscale_interp: bool = False,
+                      h:int=450, w:int=650
                     ):
     
     img, transparent_mask = img, mask.astype(float) 
@@ -104,7 +105,7 @@ class DashUtil:
                       colorscale=colorscale
                     )).update_layout(
                         margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-                        height=450, width=650)
+                        height=h, width=w)
                   )
 
   @staticmethod

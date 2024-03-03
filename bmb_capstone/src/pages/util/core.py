@@ -316,7 +316,7 @@ class Schmoo(Preprocessing):
     print(f'Opened model: {model_name}')
 
     stringTime = datetime.datetime.now().strftime('%Y-%m-%d_%H').replace('-', '_')
-    savePath = f"{self.predict_dir}/{stringTime}"    
+    savePath = f"{self.predict_dir}/{stringTime}_{self.data_dir.split('/')[-1]}"    
 
     if (len(self.dataGen.keys()) > 0) and saveImages: 
       Schmoo.initDir(savePath)

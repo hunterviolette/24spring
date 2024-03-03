@@ -103,10 +103,11 @@ class ModelPerformance(DashUtil, Preprocessing):
                           modelDir=ModelPerformance.modelPath,
                           numPredictions=numPred,
                           diamMeans=[30, 80],
-                          saveCsv=False,
                           testModels=tmodels,
                           imageDir=data
                         )
+        mdiv.append(html.H2(f"Predictions for {images}", 
+                            className=ModelPerformance.Formatting(color='info')))
         for x in [
           ["Group by model and diameter mean", ModelPerformance.EvalAggTransforms(df)],
           ["Base data", df]
@@ -119,6 +120,38 @@ class ModelPerformance(DashUtil, Preprocessing):
               
               ModelPerformance.DarkDashTable(x[1].round(4)),
             ])
+      else:
+        rules = dcc.Markdown('''
+            1. Input directory
+                ```
+                - directories of images in vol/image_data that have ground truth mask
+                ```
+            1. Add test models
+              ```
+              - Get performance of base models and selected test models
+              ```   
+
+            3. Max Predictions
+                ```
+                If max predictions == None: predict all images on webpage
+                else: predict first x images in directory
+                ```
+
+            4. Image resize
+                ```
+                Resizes the image and mask for quicker rendering
+                Default resize is (450, 450)
+                Can clear input for no resize
+                ```
+            ''', 
+          style={
+              'backgroundColor': '#121212',
+              'color': '#FFFFFF',       
+              'padding': '20px',     
+            }
+          )
+
+        mdiv.append(rules)
         
       return (images, testModels, numPred, mdiv)      
   
