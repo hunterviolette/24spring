@@ -3,6 +3,6 @@ __pycache__/
 .vscode/
 vol/image_data
 vol/predictions/*
-vol/sample
+vol/sample/vsi_data/*
 vol/image_loader
 vol/models/*/
