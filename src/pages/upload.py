@@ -107,10 +107,10 @@ class Upload(DashUtil, Preprocessing):
           tag != None and \
           hasMask != None and \
           val != None: 
-        
-        if not hasMask: 
-          tag = f"{tag}_nomask"
-          Upload.VsiToTif(Upload.load_dir, f"vol/image_loader")
+
+        Upload.VsiToTif(Upload.load_dir, Upload.load_dir)
+
+        if not hasMask: tag = f"{tag}_nomask"
 
         fileList = [f for f in os.listdir(Upload.load_dir) 
                     if f.endswith(('.tif', '.png'))]
@@ -215,8 +215,8 @@ class Upload(DashUtil, Preprocessing):
             if os.path.isfile(path): os.remove(path)
             else: shutil.rmtree(path)
         
-        if val and len(fileDict.keys())*2 == fullVal and hasMask: WriteWrap()
-        elif val and len(fileDict.keys()) == fullVal and not hasMask: WriteWrap()
+        if val and len(fileDict.keys())*2 == fullVal and hasMask and len(fileDict.keys())>0: WriteWrap()
+        elif val and len(fileDict.keys()) == fullVal and not hasMask and len(fileDict.keys())>0: WriteWrap()
         elif not val and len(fileDict.keys()) > 1: WriteWrap()
         else: mdiv.append(html.H2(f"not writing to {tag}, not clearing load_images",
                                   className=Upload.Formatting(color='success')))
@@ -228,7 +228,6 @@ class Upload(DashUtil, Preprocessing):
           ro = fileDict[key]
           rS = (450, 450)
           rImg = resize(ro["img"], rS)
-          rMask = resize(ro["mask"], rS)
           if hasMask:
             mdiv.extend([
                 html.H5(key),
@@ -237,7 +236,7 @@ class Upload(DashUtil, Preprocessing):
                         Upload.PlotImage(rImg, h=600, w=650)
                     ], width=6),
                     dbc.Col([
-                        Upload.TI2(rImg, rMask, h=600, w=650)
+                        Upload.TI2(rImg, resize(ro["mask"], rS), h=600, w=650)
                     ], width=6), 
                 ], align='justify'),
             ])
