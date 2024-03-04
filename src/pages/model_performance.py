@@ -40,7 +40,7 @@ class ModelPerformance(DashUtil, Preprocessing):
               ]),
               dbc.Col([
                 html.H4("Add test models", style={'text-align': 'center'}),
-                dcc.Dropdown(id='perf_testModels', multi=True, clearable=True,
+                dcc.Dropdown(id='perf_testModels', multi=False, clearable=True,
                             style=ModelPerformance.Formatting('textStyle'),
                           ),
               ]),
@@ -95,57 +95,50 @@ class ModelPerformance(DashUtil, Preprocessing):
       
       if clicks > 0 and images != None:
         data = [f"{ModelPerformance.dataPath}/{x}" for x in images]
+
+        if testModels == None: tmodels = None
+        else: tmodels = f"{ModelPerformance.tmodelsPath}/{testModels}"
+
         df = Schmoo().BatchEval(
                           modelDir=ModelPerformance.modelPath,
                           numPredictions=numPred,
                           diamMeans=[30, 80],
-                          saveCsv=False,
-                          testModels=testModels,
+                          testModels=tmodels,
                           imageDir=data
                         )
-        
-        df = df.astype({
-                "average precision": 'float64',
-                "true positives": 'float64',
-                "false negatives": 'float64',
-                "false positives": 'float64',
-              })
-        
-        aggs = {"jaccard index": ["count", 'mean', 'std'],
-                "euclidean normalized rmse": ['mean'],
-                "structural similarity": ['mean'],
-                "average precision": ["mean"],
-                "true positives": ["mean"],
-                "false positives": ["mean"],
-                "false negatives": ["mean"]
-              }
-        
-        mdf = df.groupby(by=["model", "diam mean"], as_index=True
-                        ).agg(aggs).reset_index().round(5)
-                
+        mdiv.append(html.H2(f"Predictions for {images}", 
+                            className=ModelPerformance.Formatting(color='info')))
         for x in [
-              ["Group by model and diameter mean", mdf],
-              ["Base data", df]
+          ["Group by model and diameter mean", ModelPerformance.EvalAggTransforms(df)],
+          ["Base data", df]
             ]:
-            
-          d = x[1]
-          if x[0] == "Base data":
-            d = d.sort_values("euclidean normalized rmse")
-          
-          else:
-            d.columns = d.columns.map(' '.join)
-            d = d.sort_values("euclidean normalized rmse mean",
-                ).rename(columns={"jaccard index count": 'sample size'})
-          
-          print(d.dtypes)
-
+                      
           mdiv.extend([
               
               html.H3(x[0], 
                 className=ModelPerformance.Formatting(color='primary')),
               
-              ModelPerformance.DarkDashTable(d.round(4)),
+              ModelPerformance.DarkDashTable(x[1].round(4)),
             ])
+      else:
+        rules = dcc.Markdown('''
+        1. **Input directory**
+          - Directories of images in `vol/image_data` that have mask pairs
+
+        2. **Add test models**
+          - Add a list of models created by the [Model generator page](http://localhost:8050/model-generator)
+
+        3. **Max Predictions**
+          - `If` max predictions == `None`: predict all images on the webpage
+          - `Else`: predict first `n` images in the directory
+
+        4. **Image resize**
+          - Resizes the image and mask for quicker rendering
+            - Default resize is (450, 450)
+            - Can clear input for no resize
+        ''')
+        
+        mdiv.append(rules)
         
       return (images, testModels, numPred, mdiv)      
   

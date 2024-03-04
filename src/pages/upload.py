@@ -60,6 +60,17 @@ class Upload(DashUtil, Preprocessing):
                       ),
               ]),
               dbc.Col([
+                  html.H4("Non-segmented imageJ masks", style={'text-align': 'center'}),
+                  dcc.Dropdown(id='uploadimgJ', multi=False,
+                      style=Upload.Formatting('textStyle'),
+                      options=[
+                          {'label': 'True', 'value': True},
+                          {'label': 'False', 'value': False}
+                        ],
+                      value=False
+                      ),
+              ]),
+              dbc.Col([
                   html.H4("Click to load images"),
                   html.Button("click here", n_clicks=0, id="uploadButton", 
                               className=Upload.Formatting('button', 'info')
@@ -77,14 +88,16 @@ class Upload(DashUtil, Preprocessing):
       Output("uploadTag", 'value'),
       Output("uploadMask", 'value'),
       Output("uploadVal", 'value'),
+      Output("uploadimgJ", 'value'),
       ],
       Input('uploadButton', 'n_clicks'),
       [State("uploadTag", "value"),
       State("uploadMask", "value"),
       State("uploadVal", 'value'),
+      State("uploadimgJ", "value"),
       ],
     )
-    def update_output(clicks, tag, hasMask, val):
+    def update_output(clicks, tag, hasMask, val, imageJ):
       print(clicks, tag, hasMask, val, sep=', ')
       mdiv = []
       mdiv.append(html.H2(Upload.TorchGPU(), 
@@ -125,19 +138,22 @@ class Upload(DashUtil, Preprocessing):
             maskName = key.replace(".", "_mask.")
 
             if maskName in filefinder:
+              ''' This is not working for cellpose segmented masks
               mask = Upload.SegmentMask( # accept both deseg and seg 
                         Upload.DesegmentMask( # so always return a seg mask
                           Upload.ReadImage(filefinder[maskName], Upload.load_dir)))
-              
+              '''
+              mask = Upload.ReadImage(filefinder[maskName], Upload.load_dir)
+              if imageJ: mask = Upload.SegmentMask(mask)
+
               fileDict[key]["mask"] = mask
             else:
               if tif: name = maskName.replace(".tif", ".png")
               elif png: name = maskName.replace(".png", ".tif")
 
               if name in filefinder: 
-                mask = Upload.SegmentMask( # accept both deseg and seg 
-                        Upload.DesegmentMask( # so always return a seg mask
-                          Upload.ReadImage(filefinder[name], Upload.load_dir)))
+                mask = Upload.ReadImage(filefinder[name], Upload.load_dir)
+                if imageJ: mask = Upload.SegmentMask(mask)
                 
                 fileDict[key]["mask"] = mask
               else: reject.append(
@@ -169,20 +185,31 @@ class Upload(DashUtil, Preprocessing):
             for key in list(set(popKeys)): fileDict.pop(key)
         
         def WriteWrap():
+          if hasMask: 
+            if tag + "_nomask" in [
+                      x for x in os.listdir(Upload.image_dir)
+                      if os.path.isdir(f"{Upload.image_dir}/{x}")
+                    
+                    ]: shutil.rmtree(f"{Upload.image_dir}/{tag}_nomask")
+
           mdiv.append(html.H2(f"Writing directory {tag} and clearing load_images",
                               className=Upload.Formatting(color='success')))
           Upload.initDir(f"{Upload.image_dir}/{tag}")
 
           for key in fileDict.keys():
+            print(f"Writing {key} to {Upload.image_dir}/{tag}/")
             imwrite(
                 f"{Upload.image_dir}/{tag}/{key}", 
                 fileDict[key]["img"])
             
             if hasMask: 
+              k = key.replace('.', '_mask.')
+              print(f"Writing {k} to {Upload.image_dir}/{tag}/")
               imwrite(
-                  f"{Upload.image_dir}/{tag}/{key.replace('.', '_mask.')}", 
+                  f"{Upload.image_dir}/{tag}/{k}", 
                   fileDict[key]["mask"])
-    
+
+          print(f"Clearing {Upload.load_dir}")
           for item in os.listdir(Upload.load_dir):
             path = os.path.join(Upload.load_dir, item)
             if os.path.isfile(path): os.remove(path)
@@ -199,19 +226,22 @@ class Upload(DashUtil, Preprocessing):
 
         for key in fileDict.keys():
           ro = fileDict[key]
+          rS = (450, 450)
+          rImg = resize(ro["img"], rS)
+          rMask = resize(ro["mask"], rS)
           if hasMask:
             mdiv.extend([
                 html.H5(key),
                 dbc.Row([
                     dbc.Col([
-                        Upload.PlotImage(ro["img"], h=600, w=650)
+                        Upload.PlotImage(rImg, h=600, w=650)
                     ], width=6),
                     dbc.Col([
-                        Upload.TI2(ro["img"], ro["mask"], h=600, w=650)
+                        Upload.TI2(rImg, rMask, h=600, w=650)
                     ], width=6), 
                 ], align='justify'),
             ])
-          else: mdiv.extend([html.H5(key), Upload.PlotImage(ro["img"], h=600, w=800)])
+          else: mdiv.extend([html.H5(key), Upload.PlotImage(rImg, h=600, w=800)])
 
         if hasMask: mdiv.append(html.H2("Rejcted image/mask pairs:"))
         else: mdiv.append(html.H2("Rejected images:"))
@@ -223,9 +253,12 @@ class Upload(DashUtil, Preprocessing):
 
       else: 
         rules = dcc.Markdown(f'''
+          * Image(s)/mask(s) must be: 2-dimensional *
+
           1. Set tag
               ```
               - The name of the sub-directory in image_data where the images/masks will be stored
+              - If writing to existing directory, it will write over any files with identical name
               
               - Tags in use: 
                 {os.listdir('./vol/image_data')}
@@ -245,6 +278,13 @@ class Upload(DashUtil, Preprocessing):
                 requires all files to load to be accepted before
                 writing to image_data and clearing image_loader
               ```
+          5. Non-segmented imageJ masks:
+            - If True:
+                - Creates segmentation mask using [scipy.ndimage.label](https://docs.scipy.org/doc/scipy/reference/generated/scipy.ndimage.label.html)
+                - **Requires all mask files to be non-segmented imageJ**
+            - Else:
+                - Assumes mask files are generated by this gui or the Cellpose gui
+
           ''', 
         style={
             'backgroundColor': '#121212',
@@ -253,24 +293,72 @@ class Upload(DashUtil, Preprocessing):
           }
         )
 
-        '''
-        imgs = dbc.Row([
-                  dbc.Col([
-                      html.H4("Correctly labeled mask:"),
-                      Upload.PlotImage(pngRead('./pages/assets/segMask.png')),
-                  ], width=6),
-                  dbc.Col([
-                      html.H4("Inorrectly labeled mask:"),
-                      Upload.PlotImage(pngRead('./pages/assets/nonSegMask.png')),
-                  ], width=6), 
-              ], align='justify'),
-        '''
+        examples = html.Div([
+          html.H3("Supported Upload Formats",
+                  className=Upload.Formatting()),
+          
+          dbc.Row([
+            dbc.Col([
+                Upload.PI3(Upload.ReadImage("nonSeg.png", 'pages/assets'), 500, 500, False),
+                dcc.Markdown('''
+                    - Mask generated by ImageJ
+                    - Requires: "Has Mask" == True and "Non-segmented imageJ masks" == True
+                  ''')
+            ]),
+            dbc.Col([
+                Upload.PI3(Upload.ReadImage("tif_png.png", 'pages/assets'), 700, 700, False),
+                dcc.Markdown('''
+                    - Mask files generated by this app. Mask files containing _cp_ were mask files 
+                      that were corrected in the cellpose GUI
+                      
+                    - Requires: "Has Mask" == True and "Non-segmented imageJ masks" == False
+                  '''),
+            ]), 
+          ], align='justify'),
 
-        mdiv.extend([rules])  
+          dbc.Row([
+              Upload.PI3(Upload.ReadImage("vsi.png", 'pages/assets'), 1000, 1000, False),
+              dcc.Markdown('''
+                  <ul style="list-style-position: inside; text-align: center;">
+                      <li>Accepts raw microspy data with x.vsi and _x/stack1/frame_t_0.ets file format</li>
+                      <li>Requires: "Has Mask" == False</li>
+                  </ul>
+              ''', dangerously_allow_html=True)
+          ], align='center'),
+
+          html.H3("Correct Uploads",
+                  className=Upload.Formatting()),
+
+          dbc.Row([
+            dbc.Col([
+                Upload.PI3(Upload.ReadImage("p1.png", 'pages/assets'), 700, 700, False)
+            ]),
+            dbc.Col([
+                Upload.PI3(Upload.ReadImage("p2.png", 'pages/assets'), 700, 700, False)
+            ]), 
+            dbc.Col([
+                Upload.PI3(Upload.ReadImage("p3.png", 'pages/assets'), 700, 700, False)
+            ]), 
+          ], align='justify'),
+          
+          html.H3("Incorrect Uploads",
+                  className=Upload.Formatting()),
+
+          dbc.Row([
+            dbc.Col([
+                Upload.PI3(Upload.ReadImage("b1.png", 'pages/assets'), 700, 700, False)
+            ]),
+            dbc.Col([
+                Upload.PI3(Upload.ReadImage("b2.png", 'pages/assets'), 700, 700, False)
+            ]),
+          ], align='justify'),
+        ])
+
+        mdiv.extend([rules, examples])  
       
       print("plotting...")
-      return (mdiv, tag, hasMask, val)
-    
+      return (mdiv, tag, hasMask, val, imageJ)
+          
 x = Upload()
 layout = x.layout()
 x.callbacks()

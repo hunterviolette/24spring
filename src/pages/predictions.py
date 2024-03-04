@@ -47,12 +47,12 @@ class Predictions(DashUtil, Preprocessing):
         dbc.Col([
             html.H4("Save Masks", style={'text-align': 'center'}),
             dcc.Dropdown(id='saveImage', multi=False, value=False,
-                style=Predictions.Formatting('textStyle'),
-                options=[
-                    {'label': 'True', 'value': True},
-                    {'label': 'False', 'value': False}
-                  ]
-                ),
+                              style=Predictions.Formatting('textStyle'),
+                              options=[
+                                  {'label': 'True', 'value': True},
+                                  {'label': 'False', 'value': False}
+                                ]
+                            ),
         ]),
         dbc.Col([
             html.H4("Diameter mean", style={'text-align': 'center'}),
@@ -94,8 +94,12 @@ class Predictions(DashUtil, Preprocessing):
     )
     def initPred(clicks):
       return (
-        os.listdir(Predictions.dataPath),
-        os.listdir(Predictions.modelPath)
+        [x for x in os.listdir(Predictions.dataPath) 
+          if os.path.isdir(f"{Predictions.dataPath}/{x}")],
+
+        [x for x in os.listdir(Predictions.modelPath) 
+          if os.path.isfile(f"{Predictions.modelPath}/{x}") 
+          and not x.endswith('.csv')]
       )
 
     @callback(
@@ -216,11 +220,8 @@ class Predictions(DashUtil, Preprocessing):
       else:
         rules = dcc.Markdown('''
             1. Input directory
-                ```
-                - Each directory of images in vol/image_data.
-                - Add sets of images as input directories using the Upload page 
-                - Image(s)/mask(s) must be: 2-dimensional and (png or tif)
-                ```
+                - Each `directory` of images in `vol/image_data`.
+                - Add sets of images using the [Upload page](http://localhost:8050/upload)
 
             2. Models
                 ```

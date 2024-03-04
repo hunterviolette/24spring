@@ -1,12 +1,14 @@
 import plotly.graph_objects as go
+import pandas as pd
 import numpy as np
 import os 
+import datetime
 
 from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
 from skimage.segmentation import mark_boundaries
 from scipy.ndimage import label 
-from dash import dcc, dash_table
+from dash import dcc, dash_table, html
 from PIL import Image
 from aicsimageio import AICSImage
 
@@ -15,6 +17,23 @@ import base64
 import os
 
 class DashUtil:
+
+  @staticmethod
+  def EvalAggTransforms(df: pd.DataFrame):
+    df = df.groupby(by=["model", "diam mean"], as_index=True
+                        ).agg({"jaccard index": ["count", 'mean', 'std'],
+                                "euclidean normalized rmse": ['mean'],
+                                "structural similarity": ['mean'],
+                                "average precision": ["mean"],
+                                "true positives": ["mean"],
+                                "false positives": ["mean"],
+                                "false negatives": ["mean"]
+                        }).reset_index(
+                        ).round(5)  
+    df.columns = df.columns.map(' '.join)
+    return df.sort_values("euclidean normalized rmse mean",
+          ).rename(columns={"jaccard index count": 'sample size'})
+
 
   @staticmethod
   def DarkDashTable(df, rows: int = 30):
@@ -65,9 +84,28 @@ class DashUtil:
     return dcc.Graph(figure=figure)
 
   @staticmethod
+  def PI3(img: np.ndarray, h: int = 450, w: int = 450, flip: bool = True) -> html.Div:
+      buffer = io.BytesIO()
+      
+      if flip: Image.fromarray(img).transpose(Image.FLIP_TOP_BOTTOM).save(buffer, format='PNG')
+      else: Image.fromarray(img).save(buffer, format='PNG')
+
+      encoded_img = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+      return html.Div(
+              html.Img(
+                src=f"data:image/png;base64,{encoded_img}",
+                style={'max-height': f'{h}px', 'max-width': f'{w}px', 
+                      'width': 'auto', 'height': 'auto', 
+                      'display': 'block', 'margin': 'auto'}
+                )
+              )
+
+  @staticmethod
   def TransparentImage(img, mask, 
                       colorscale: str = 'emrld',
-                      colorscale_interp: bool = False
+                      colorscale_interp: bool = False,
+                      h:int=450, w:int=650
                     ):
     
     img, transparent_mask = img, mask.astype(float) 
@@ -85,7 +123,7 @@ class DashUtil:
                       colorscale=colorscale
                     )).update_layout(
                         margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-                        height=450, width=650)
+                        height=h, width=w)
                   )
 
   @staticmethod
@@ -129,6 +167,12 @@ class DashUtil:
     else: raise Exception("className not found")
 
 class Preprocessing:
+
+  @staticmethod
+  def StrTime(asInt: bool = False):
+    x = int(datetime.datetime.utcnow().timestamp())
+    if asInt: return x
+    else: return str(x)
 
   @staticmethod
   def VsiToTif(readDir: str = '.', writeDir = '.'):
@@ -180,6 +224,7 @@ class Preprocessing:
   @staticmethod
   def NameCleaner(file: str):
     file = file.lower(
+            ).replace("_cp_masks", "tmp"
             ).replace(" ", ""
             ).replace("_", ""         
             ).replace("groundtruth", "tmp"
