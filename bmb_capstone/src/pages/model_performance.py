@@ -122,35 +122,22 @@ class ModelPerformance(DashUtil, Preprocessing):
             ])
       else:
         rules = dcc.Markdown('''
-            1. Input directory
-                ```
-                - directories of images in vol/image_data that have ground truth mask
-                ```
-            1. Add test models
-              ```
-              - Get performance of base models and selected test models
-              ```   
+        1. **Input directory**
+          - Directories of images in `vol/image_data` that have mask pairs
 
-            3. Max Predictions
-                ```
-                If max predictions == None: predict all images on webpage
-                else: predict first x images in directory
-                ```
+        2. **Add test models**
+          - Add a list of models created by the [Model generator page](http://localhost:8050/model-generator)
 
-            4. Image resize
-                ```
-                Resizes the image and mask for quicker rendering
-                Default resize is (450, 450)
-                Can clear input for no resize
-                ```
-            ''', 
-          style={
-              'backgroundColor': '#121212',
-              'color': '#FFFFFF',       
-              'padding': '20px',     
-            }
-          )
+        3. **Max Predictions**
+          - `If` max predictions == `None`: predict all images on the webpage
+          - `Else`: predict first `n` images in the directory
 
+        4. **Image resize**
+          - Resizes the image and mask for quicker rendering
+            - Default resize is (450, 450)
+            - Can clear input for no resize
+        ''')
+        
         mdiv.append(rules)
         
       return (images, testModels, numPred, mdiv)      

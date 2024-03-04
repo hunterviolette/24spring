@@ -235,6 +235,45 @@ class Generator(DashUtil, Preprocessing):
                 
                 Generator.DarkDashTable(df),
               ])
+      
+      else:
+        rules = dcc.Markdown('''
+        When selecting image directories, **only** select the directory *once* for training or testing, not both
+        ## Training Parameters - Used for training models
+        1. **Image Directories**
+          - Directories of images in `vol/image_data` that have mask pairs
+          - Allows multiple directories to be selected
+
+        2. **Number of steps **
+          - The amount of combinations each parameter will have
+            - when number of steps (x) == 1: trains 1 model
+            - when x == 2: trains 8 models
+            - when x == 3: trains 27 models
+            - when x == 4: trains 64 models
+            - when x == 5: trains 125 models
+
+        3. **Epoch (start/end)**
+          - The number of iterations over the entire training dataset during the training process. An epoch is one complete pass through the entire dataset. Training a deep learning model involves iterating over the dataset multiple times, adjusting the model's weights based on the training data and the optimization algorithm used. The number of epochs is a hyperparameter that determines how many times the model is trained on the dataset. Increasing the number of epochs may allow the model to learn more complex patterns but also increases the risk of overfitting if the model is trained for too long. (Definition credit: OpenAI)
+
+        4. **Weight decay (start/end)**
+          - Weight decay, also known as L2 regularization, is a technique used to prevent overfitting in deep learning models. It involves adding a penalty term to the loss function that penalizes large weights in the model. This penalty encourages the model to learn simpler patterns and helps prevent it from memorizing the training data. The weight decay parameter controls the strength of this regularization effect. (Definition credit: OpenAI)
+
+        5. **Learning Rate (start/end)**
+          - Learning rate is a hyperparameter that determines the size of the steps taken during the optimization process (e.g., gradient descent) to update the weights of the neural network. It controls the speed at which the model learns and converges towards the optimal solution. A higher learning rate may lead to faster convergence, but it can also cause instability and overshooting. Conversely, a lower learning rate may result in slower convergence but may be more stable and less prone to overshooting. (Definition credit: OpenAI)
+
+        6. **Train models**
+          - ``If True``: Trains models
+          - ``else``: Terminal prints number of models and their combinations
+        
+        [Training Function](https://cellpose.readthedocs.io/en/latest/_modules/cellpose/train.html#train_seg)
+        
+        ## Testing Parameters - Used for evalulating model performance
+        1. **Image Directories**
+          - Directories of images in `vol/image_data` that have mask pairs
+          - Allows multiple directories to be selected
+        ''')
+                
+        mdiv.append(rules)
                   
       return (trDirs, steps, 
               spoch, epoch, 

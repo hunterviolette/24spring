@@ -8,7 +8,7 @@ from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
 from skimage.segmentation import mark_boundaries
 from scipy.ndimage import label 
-from dash import dcc, dash_table
+from dash import dcc, dash_table, html
 from PIL import Image
 from aicsimageio import AICSImage
 
@@ -82,6 +82,24 @@ class DashUtil:
     )
 
     return dcc.Graph(figure=figure)
+
+  @staticmethod
+  def PI3(img: np.ndarray, h: int = 450, w: int = 450, flip: bool = True) -> html.Div:
+      buffer = io.BytesIO()
+      
+      if flip: Image.fromarray(img).transpose(Image.FLIP_TOP_BOTTOM).save(buffer, format='PNG')
+      else: Image.fromarray(img).save(buffer, format='PNG')
+
+      encoded_img = base64.b64encode(buffer.getvalue()).decode('utf-8')
+
+      return html.Div(
+              html.Img(
+                src=f"data:image/png;base64,{encoded_img}",
+                style={'max-height': f'{h}px', 'max-width': f'{w}px', 
+                      'width': 'auto', 'height': 'auto', 
+                      'display': 'block', 'margin': 'auto'}
+                )
+              )
 
   @staticmethod
   def TransparentImage(img, mask, 
