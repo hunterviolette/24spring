@@ -219,6 +219,11 @@ class Predictions(DashUtil, Preprocessing):
         print('plotting...')
       else:
         rules = dcc.Markdown('''
+            ## What does clicking this button do? 
+              - The button will generate a segmented mask for each image in a directory and overlay the outline of the segmented mask on the input image
+              - If the image already has a mask pair, it will score its performance using the [jaccard index](https://cellpose.readthedocs.io/en/latest/api.html#cellpose.metrics.aggregated_jaccard_index)
+            
+            ## Input variables
             1. Input directory - *_Required field_*
                 - Each `directory` of images in `vol/image_data`.
                 - Add sets of images using the [Upload page](http://localhost:8050/upload)

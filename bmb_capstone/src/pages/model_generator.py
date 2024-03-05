@@ -166,11 +166,11 @@ class Generator(DashUtil, Preprocessing):
       ]
     )
 
-    def maincb(clicks, trDirs, steps, 
+    def maincb(clicks, trainDirs, steps, 
               spoch, epoch, 
               sdecay, edecay, 
               slr, elr, 
-              train, teDirs, 
+              train, testDirs, 
             ):
       
       mdiv = []
@@ -187,18 +187,11 @@ class Generator(DashUtil, Preprocessing):
           edecay != None and \
           slr != None and \
           elr != None and \
-          trDirs != None and \
-          teDirs != None and \
-          train:
+          trainDirs != None and \
+          testDirs != None:
                   
-        trainDirs = [f"{Generator.dataPath}/{x}" for x in trDirs]
-        testDirs = [f"{Generator.dataPath}/{x}" for x in teDirs]
-
-        if len(trainDirs) > 1: trainDirs = [trainDirs]
-
-        x = Schmoo()
         
-        df, modelsPath = x.BatchTrain(
+        df, modelsPath = Schmoo().BatchTrain(
                 savePath=f"{Generator.modelPath}/test_models",
                 steps=steps,
                 sEpoch=spoch,
@@ -209,32 +202,58 @@ class Generator(DashUtil, Preprocessing):
                 eWeightDecay=edecay,
                 diamMeans=[30],
                 baseModels=baseModels,
-                dataPaths=trainDirs,
+                dataPaths=[f"{Generator.dataPath}/{x}" for x in trainDirs],
                 train=train
               )
-        df.to_csv(f"{modelsPath}/parameters.csv")
-        
-        mdiv.extend([
-              html.H2(f"Saved models to {modelsPath}", 
-                  className=Generator.Formatting(color='info')),
-              Generator.DarkDashTable(df),
-            ])
-        
-        df = x.BatchEval(
+
+        edf = Schmoo().BatchEval(
                 diamMeans=[30,80,120],
-                imageDir=testDirs,
-                testModels=modelsPath
+                imageDir=[f"{Generator.dataPath}/{x}" for x in testDirs],
+                testModels=modelsPath,
+                test=train,
               )
-        df.to_csv(f"{modelsPath}/results.csv")
         
-        adf = Generator.EvalAggTransforms(df)
-        adf.to_csv(f"{modelsPath}/agg_results.csv")
-        
-        mdiv.extend([
-                Generator.DarkDashTable(adf),
-                
-                Generator.DarkDashTable(df),
-              ])
+        if train:
+          df.to_csv(f"{modelsPath}/parameters.csv")
+          edf.to_csv(f"{modelsPath}/results.csv")
+          
+          adf = Generator.EvalAggTransforms(edf)
+          adf.to_csv(f"{modelsPath}/agg_results.csv")
+          
+          mdiv.extend([
+                  html.H2(f"Saved models to {modelsPath}", 
+                          className=Generator.Formatting(color='info')),
+
+                  Generator.DarkDashTable(df),
+
+                  Generator.DarkDashTable(adf),
+                  
+                  Generator.DarkDashTable(edf),
+                ])
+          
+        else: 
+          sharedKeys = [k for k in set(df) if k in set(edf)]
+          if sharedKeys:
+              mdiv.extend([
+                  html.H1(f"{len(sharedKeys)} keys are in both training and testing", 
+                          className=Generator.Formatting(color='danger')),
+                  
+                  html.Div(
+                    [html.P(key, style={"font-family": "monospace", "white-space": "pre", 
+                                        "margin": "5px"}) for key in sharedKeys],
+                    style={"max-width": "1200px", "display": "flex", "flex-wrap": "wrap"}
+                  )
+
+                ])
+
+          mdiv.extend([
+              html.H1(f"This will train {modelsPath} models", 
+                className=Generator.Formatting(color='info')),
+
+              html.H1(f"With {len(df)} train images and {len(edf)} test images", 
+                className=Generator.Formatting(color='info')),
+            
+            ])
       
       else:
         rules = dcc.Markdown('''
@@ -275,11 +294,11 @@ class Generator(DashUtil, Preprocessing):
                 
         mdiv.append(rules)
                   
-      return (trDirs, steps, 
+      return (trainDirs, steps, 
               spoch, epoch, 
               sdecay, edecay, 
               slr, elr, 
-              train, teDirs, 
+              train, testDirs, 
               mdiv
             )
     

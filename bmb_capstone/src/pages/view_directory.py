@@ -151,6 +151,11 @@ class ViewDir(DashUtil, Preprocessing):
         print('plotting...')
       else:
         rules = dcc.Markdown('''
+            ## What does clicking this button do? 
+              - Plot images in a directory within `vol/image_data`
+                - If images has mask pairs, will also overlay segmented mask overlay on input image
+
+            ## Input variables
             1. Input directory - *_Required field_*
                 - Each `directory` of images in `vol/image_data`.
                 - Add sets of images using the [Upload page](http://localhost:8050/upload)
