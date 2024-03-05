@@ -114,9 +114,13 @@ class Schmoo(Preprocessing):
     
     if bigGen != None: Schmoo.BigDataGenerator(self, bigGen, maskRequired)
 
-    if hasattr(self, 'bigGen'): self.dataGen = self.bigGen
+    if hasattr(self, 'bigGen'): 
+      print("returned generator with BigGen")
+      self.dataGen = self.bigGen
 
-    if not hasattr(self, 'dataGen'): Schmoo.DataGenerator(self, maskRequired)
+    if not hasattr(self, 'dataGen'): 
+      print("returned generator with smallGen")
+      Schmoo.DataGenerator(self, maskRequired)
 
   def Train(self,
             model_type: str = 'cyto3',
@@ -203,7 +207,7 @@ class Schmoo(Preprocessing):
     weightDecays = np.linspace(sWeightDecay, eWeightDecay, steps)
     numEpochs = list(range(sEpoch, eEpoch+1, ceil(eEpoch/steps)))
 
-    params = [dataPaths, 
+    params = [[dataPaths], 
               learningRates, 
               weightDecays, 
               numEpochs,
@@ -214,7 +218,8 @@ class Schmoo(Preprocessing):
     totalCount = reduce(lambda x,y: x*y,[len(param) for param in params])
     if not train: 
       print(f'These parameters will train: {totalCount} models')
-      return 
+      Schmoo.DataGenInstance(self, True, dataPaths)
+      return self.dataGen.keys(), totalCount
     
     print("\n".join([f"=== This will train {totalCount} models,", 
                     f"ctrl+C terminal within 5 seconds to cancel ==="]))
@@ -226,61 +231,60 @@ class Schmoo(Preprocessing):
     Schmoo.initDir(dname)
 
     names, df = [], pd.DataFrame()
-    for dpaths in dataPaths:
-      Schmoo.BigDataGenerator(self, dpaths, True)
-      for baseModel, diamMean in product(baseModels, diamMeans):
-        self.cellposeModel = models.CellposeModel(
-                                    gpu=self.gpu,
-                                    model_type=baseModel,
-                                    diam_mean=diamMean,
-                                    nchan=2
-                                  )
+    Schmoo.BigDataGenerator(self, dataPaths, True)
+    for baseModel, diamMean in product(baseModels, diamMeans):
+      self.cellposeModel = models.CellposeModel(
+                                  gpu=self.gpu,
+                                  model_type=baseModel,
+                                  diam_mean=diamMean,
+                                  nchan=2
+                                )
 
-        for dataPath, learningRate, weightDecay, numEpoch in product(
-            dataPaths, learningRates, weightDecays, numEpochs):
+      for learningRate, weightDecay, numEpoch in product(
+          learningRates, weightDecays, numEpochs):
 
-          name = "_".join([
-                    baseModel,
-                    f"lr{int(learningRate*100)}",
-                    f"wd{int(weightDecay*100000)}",
-                    f"ep{numEpoch}", 
-                    f"dm{diamMean}",
-                    initTime,
-                ])
+        name = "_".join([
+                  baseModel,
+                  f"lr{int(learningRate*100)}",
+                  f"wd{int(weightDecay*100000)}",
+                  f"ep{numEpoch}", 
+                  f"dm{diamMean}",
+                  initTime,
+              ])
 
-          print(f"Model {len(names)+1}/{totalCount}", 
-                dataPath, baseModel, 
-                learningRate, weightDecay, 
-                numEpoch, sep=', ')
-          
-          names.append(name)
-          
-          Schmoo.Train(
-            self,
-            learning_rate=learningRate,
-            weight_decay=weightDecay,
-            n_epochs=numEpoch,
-            save_every=10000,
-            residual_on = True,
-            rescale = True,
-            normalize = True,
-            savePath = dname,
-            modelName = name
-          )
-
-          df = pd.concat([df, 
-                          pd.DataFrame({
-                            "name": [name],
-                            "learning rate": [learningRate],
-                            "weight decay": [weightDecay],
-                            "epochs": [numEpoch],
-                            "training sets": [str(dataPaths)],
-                            })
-                          ])
-      
+        print(f"Model {len(names)+1}/{totalCount}", 
+              dataPaths, baseModel, 
+              learningRate, weightDecay, 
+              numEpoch, sep=', ')
         
-      print(f'=== Finished training after {Schmoo.ElapsedTime(self)}')
-      return df, dname
+        names.append(name)
+        
+        Schmoo.Train(
+          self,
+          learning_rate=learningRate,
+          weight_decay=weightDecay,
+          n_epochs=numEpoch,
+          save_every=10000,
+          residual_on = True,
+          rescale = True,
+          normalize = True,
+          savePath = dname,
+          modelName = name
+        )
+
+        df = pd.concat([df, 
+                        pd.DataFrame({
+                          "name": [name],
+                          "learning rate": [learningRate],
+                          "weight decay": [weightDecay],
+                          "epochs": [numEpoch],
+                          "training sets": [str(dataPaths)],
+                          })
+                        ])
+    
+      
+    print(f'=== Finished training after {Schmoo.ElapsedTime(self)}')
+    return df, dname
 
   def Predict(self,
               model_name: str = 'cyto2torch_0',
@@ -435,12 +439,15 @@ class Schmoo(Preprocessing):
                 numPredictions: Optional[int] = None,
                 diamMeans: Union[List[int], int] = [30, 80],
                 testModels: Optional[str] = None,
-                imageDir: Union[str, List[str], None] = None
+                imageDir: Union[str, List[str], None] = None,
+                test: bool = True
               ):
     
     if isinstance(diamMeans, int): diamMeans = [diamMeans]
     
     Schmoo.DataGenInstance(self, maskRequired=True, bigGen=imageDir)
+
+    if not test: return self.dataGen.keys()
     
     modelList = [f"{modelDir}/{f}" for f in os.listdir(modelDir) 
                 if os.path.isfile(f"{modelDir}/{f}")]
