@@ -66,40 +66,34 @@ class DashUtil:
                         ))
 
   @staticmethod
-  def PI2(img: np.ndarray) -> dcc.Graph:
+  def PI2(img: np.ndarray, 
+          wh: int = 450, # width height max pixel size
+          flip: bool = True, 
+          zoom: bool = False
+        ):
+    
     buffer = io.BytesIO()
-    Image.fromarray(img
-        ).transpose(Image.FLIP_TOP_BOTTOM
-        ).save(buffer, format='PNG')
+    
+    if flip: Image.fromarray(img).transpose(Image.FLIP_TOP_BOTTOM).save(buffer, format='PNG')
+    else: Image.fromarray(img).save(buffer, format='PNG')
 
-    encoded_img = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    encImage = base64.b64encode(buffer.getvalue()).decode('utf-8')
+    if zoom:
+      fig = go.Figure()
+      fig.add_trace(go.Image(source=f"data:image/png;base64,{encImage}"))
+      fig.update_layout(
+          margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
+          height=wh, width=wh
+        )
 
-    figure = go.Figure(go.Image(source=f"data:image/png;base64,{encoded_img}"))
-
-    figure.update_layout(
-        margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-        height=450, width=450
-    )
-
-    return dcc.Graph(figure=figure)
-
-  @staticmethod
-  def PI3(img: np.ndarray, h: int = 450, w: int = 450, flip: bool = True) -> html.Div:
-      buffer = io.BytesIO()
-      
-      if flip: Image.fromarray(img).transpose(Image.FLIP_TOP_BOTTOM).save(buffer, format='PNG')
-      else: Image.fromarray(img).save(buffer, format='PNG')
-
-      encoded_img = base64.b64encode(buffer.getvalue()).decode('utf-8')
-
-      return html.Div(
-              html.Img(
-                src=f"data:image/png;base64,{encoded_img}",
-                style={'max-height': f'{h}px', 'max-width': f'{w}px', 
-                      'width': 'auto', 'height': 'auto', 
-                      'display': 'block', 'margin': 'auto'}
-                )
-              )
+      return dcc.Graph(figure=fig)
+    else: return html.Div(
+                  html.Img(
+                    src=f"data:image/png;base64,{encImage}",
+                    style={'max-height': f'{wh}px', 'max-width': f'{wh}px', 
+                          'width': 'auto', 'height': 'auto', 
+                          'display': 'block', 'margin': 'auto'}
+                    ))
 
   @staticmethod
   def TransparentImage(img, mask, 
@@ -127,7 +121,11 @@ class DashUtil:
                   )
 
   @staticmethod
-  def TI2(img, mask, h:int=450, w:int=450):    
+  def TI2(img: np.ndarray, 
+          mask: np.ndarray, 
+          wh : int = 450, 
+          zoom: bool = False,
+        ):    
     buffer = io.BytesIO()
     Image.fromarray(
             (mark_boundaries(img, mask, mode='thick')*255).astype(np.uint8)
@@ -136,15 +134,23 @@ class DashUtil:
     
     encImage = base64.b64encode(buffer.getvalue()).decode("utf-8")
     
-    figure = go.Figure()
-    figure.add_trace(go.Image(source=f"data:image/png;base64,{encImage}"))
-    
-    figure.update_layout(
-        margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
-        height=h, width=w
-    )
+    if zoom:
+      fig = go.Figure()
+      fig.add_trace(go.Image(source=f"data:image/png;base64,{encImage}"))
+      
+      fig.update_layout(
+          margin=dict(l=0.1, r=0.1, t=0.1, b=0.1), 
+          height=wh, width=wh
+      )
 
-    return dcc.Graph(figure=figure)
+      return dcc.Graph(figure=fig)
+    else: return html.Div(
+                  html.Img(
+                    src=f"data:image/png;base64,{encImage}",
+                    style={'max-height': f'{wh}px', 'max-width': f'{wh}px', 
+                          'width': 'auto', 'height': 'auto', 
+                          'display': 'block', 'margin': 'auto'}
+                    ))
 
   @staticmethod
   def Formatting( 

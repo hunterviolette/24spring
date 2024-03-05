@@ -39,7 +39,7 @@ class Predictions(DashUtil, Preprocessing):
                       ),
         ]),
         dbc.Col([
-            html.H4("Models", style={'text-align': 'center'}),
+            html.H4("Model", style={'text-align': 'center'}),
             dcc.Dropdown(id='modelNames', multi=False,
                         style=Predictions.Formatting('textStyle'),
                       ),
@@ -170,15 +170,15 @@ class Predictions(DashUtil, Preprocessing):
                   dbc.Row([
                       dbc.Col([
                           html.H4("True mask overlay"),
-                          Predictions.TI2(re[0], re[4]),
+                          Predictions.TI2(re[0], re[4], zoom=True),
                       ], width=4),
                       dbc.Col([
                           html.H4("Input image"),
-                          Predictions.PlotImage(re[0]),
+                          Predictions.PI2(re[0], zoom=True),
                       ], width=4), 
                       dbc.Col([
                           html.H4("Predicted mask overlay"),
-                          Predictions.TI2(re[0], re[1]),
+                          Predictions.TI2(re[0], re[1], zoom=True),
                       ], width=4), 
 
                   ], align='justify'),
@@ -194,11 +194,11 @@ class Predictions(DashUtil, Preprocessing):
                   dbc.Row([
                       dbc.Col([
                           html.H4("Input image"),
-                          Predictions.PlotImage(re[0], w=650),
+                          Predictions.PI2(re[0], wh=650, zoom=True),
                       ], width=6),
                       dbc.Col([
                           html.H4("Predicted mask overlay"),
-                          Predictions.TI2(re[0], re[1], w=650),
+                          Predictions.TI2(re[0], re[1], wh=650, zoom=True),
                       ], width=6), 
                   ], align='justify'),
                 ])
@@ -219,34 +219,34 @@ class Predictions(DashUtil, Preprocessing):
         print('plotting...')
       else:
         rules = dcc.Markdown('''
-            1. Input directory
+            1. Input directory - *_Required field_*
                 - Each `directory` of images in `vol/image_data`.
                 - Add sets of images using the [Upload page](http://localhost:8050/upload)
 
-            2. Models
+            2. Model - *_Required field_*
                 ```
-                The cellpose models in vol/models
+                Cellpose models in vol/models
                 ```
 
-            3. Save predictions
+            3. Save predictions - Default:False
                 ```
                 Saves predicted mask to vol/predictions
                 ```
 
-            4. Diameter mean
+            4. Diameter mean - Default:30
                 ```
                 The estimated pixel diameter of the cells
                 Try 30, 80, 15, 120 if you are having 
                 issues with meaningful predictions
                 ```
 
-            5. Max predictions
+            5. Max predictions - Default:None
                 ```
                 If max predictions == None: predict all images in folder
                 else: predict first x images in directory
                 ```
 
-            6. Image resize
+            6. Image resize - Default:450
                 ```
                 Resizes the image and mask for quicker rendering
                 Default resize is (450, 450)

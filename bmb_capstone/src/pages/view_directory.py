@@ -46,7 +46,7 @@ class ViewDir(DashUtil, Preprocessing):
         ]),
         dbc.Col([
             html.H4("Image resize", style={'text-align': 'center'}),
-            dcc.Input(id='view_resizeImage', type='number', value=450,
+            dcc.Input(id='view_resizeImage', type='number', value=600,
                       className=ViewDir.Formatting('input'),
                       style=ViewDir.Formatting('textStyle')
                     ),
@@ -100,12 +100,9 @@ class ViewDir(DashUtil, Preprocessing):
       
       if clicks > 0 and data_dir != None:
 
-        print(data_dir)
-
         if "_nomask" in data_dir: hasMask = False
         else: hasMask = True
 
-        print(hasMask)
 
         res = Schmoo(data_dir=f"{ViewDir.dataPath}/{data_dir}",
                   ).DataGenerator(maskRequired=hasMask)
@@ -129,11 +126,11 @@ class ViewDir(DashUtil, Preprocessing):
                 dbc.Row([
                     dbc.Col([
                         html.H4("True mask overlay"),
-                        ViewDir.TI2(img, mask, w=800),
+                        ViewDir.TI2(img, mask, wh=resizeImage, zoom=True),
                     ], width=6),
                     dbc.Col([
                         html.H4("Input image"),
-                        ViewDir.PlotImage(img, w=800),
+                        ViewDir.PI2(img, wh=resizeImage, zoom=True),
                     ], width=6), 
 
                 ], align='justify'),
@@ -144,8 +141,8 @@ class ViewDir(DashUtil, Preprocessing):
                 html.H3(f"Image filename: {key}",
                         className=ViewDir.Formatting()),
                 
-                ViewDir.PlotImage(img, w=800),
-              ], width=12)
+                ViewDir.PI2(img, wh=resizeImage, zoom=True),
+              ])
             
             if isinstance(numPredictions, int):
               if i+1 >= numPredictions: break
@@ -154,23 +151,19 @@ class ViewDir(DashUtil, Preprocessing):
         print('plotting...')
       else:
         rules = dcc.Markdown('''
-            1. Input directory
-                ```
-                - Each directory of images in vol/image_data.
-                - Add sets of images as input directories using the Upload page 
-                - Image(s)/mask(s) must be: 2-dimensional and (png or tif)
-                ```
+            1. Input directory - *_Required field_*
+                - Each `directory` of images in `vol/image_data`.
+                - Add sets of images using the [Upload page](http://localhost:8050/upload)
 
-            5. Max Images
+            5. Max Images - Default:None
                 ```
                 If max images == None: render all images on webpage
                 else: render first x images in directory
                 ```
 
-            6. Image resize
+            6. Image resize - Default:450
                 ```
                 Resizes the image and mask for quicker rendering
-                Default resize is (450, 450)
                 Can clear input for no resize
                 ```
             ''', 
