@@ -130,12 +130,15 @@ class Balance:
     print(f"20 minute batch, 80% conversion scaled by {scalar}", 
           df.rename(columns=renameDict), sep='\n')
     
-    scalar = (.3334 / df.loc[df["Component"] == "NH3"
+    scalar2 = (.3334 / df.loc[df["Component"] == "NH3"
                     ]["Mass Flow (mtpd)"].values[0]).__round__(5) 
 
-    for col in self.flowCols: df[col] = df[col] * scalar
-    print(f"20 minute batch, 80% conversion, with recycle, scaled by additioanl {scalar}", 
+    for col in self.flowCols: df[col] = df[col] * scalar2
+    print(f"20 minute batch, 80% conversion, with recycle, scaled additionally by {scalar2}", 
           df.rename(columns=renameDict), sep='\n')
+    
+    s = (scalar*scalar2).__round__(3)
+    print(f"Total scaledown with 20 min batch, 80% conversion with recyle: {s}")
 
 if __name__ == "__main__":
 
