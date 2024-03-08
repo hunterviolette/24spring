@@ -113,22 +113,29 @@ class Balance:
                     "Mass Flow (kg/h)"]
     
     nh3Flow = self.q(df.loc[df["Component"] == "NH3"
-                          ]["Mass Flow (mtpd)"].values[0] *3*4/5, 'mtpd')
+                          ]["Mass Flow (mtpd)"].values[0] *3*.8, 'mtpd')
         
     scalar = (self.targetFlow / nh3Flow).__round__(5).magnitude 
     
     df = self.ombal.copy()
     print(f"60 minute batch, 100% conversion", df, sep='\n')
     for col in self.flowCols: df[col] = df[col] * scalar
-
-    df.rename(columns={
+    
+    renameDict = {      
       "Component Flow (kmol/h)": "Component Flow (kmol/20-min-batch)",
       "Mass Flow (mtpd)": "Mass Flow (mtpd/20-min-batch)",
       "Mass Flow (kg/h)": "Mass Flow (kg/20-min-batch)",
-      }, inplace=True)
-    
+    }
+
     print(f"20 minute batch, 80% conversion scaled by {scalar}", 
-          df, sep='\n')
+          df.rename(columns=renameDict), sep='\n')
+    
+    scalar = (.3334 / df.loc[df["Component"] == "NH3"
+                    ]["Mass Flow (mtpd)"].values[0]).__round__(5) 
+
+    for col in self.flowCols: df[col] = df[col] * scalar
+    print(f"20 minute batch, 80% conversion, with recycle, scaled by additioanl {scalar}", 
+          df.rename(columns=renameDict), sep='\n')
 
 if __name__ == "__main__":
 
