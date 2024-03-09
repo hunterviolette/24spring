@@ -26,6 +26,31 @@ Overall:
 class Air: 
   mass = 28.9647
   n2frac = .7808
+  o2frac = .20947
+  arfrac = .00934
+  co2frac = .00035
+
+
+  CompList = ["O2", "Ar", "CO2"]
+
+  @staticmethod
+  def MassPercent(comp, retfrac:bool=False):
+    if comp in ["N2", "O2", "Ar", "CO2"]:
+      uReg = pint.UnitRegistry(autoconvert_offset_to_baseunit = True)
+      q = uReg.Quantity
+      
+      fracs = {
+        "N2": Air.n2frac,
+        "O2": Air.o2frac,
+        "Ar": Air.arfrac,
+        "CO2": Air.co2frac
+      }
+      if retfrac: return fracs[comp]
+
+      return (
+              q(Substance.from_formula(comp).mass, "g/mol")
+              / q(Air.mass, 'g/mol') * fracs[comp]
+            ).magnitude
 
 class Balance: 
   def __init__(self, targetflow: int = 1 # in metric ton per day 
@@ -77,19 +102,23 @@ class Balance:
                       })])
     
     if "N2" in df["Component"].unique():
-      mw = self.subs["Air"].mass
-      m = df.loc[df["Component"] == "N2"]["Mass Flow (mtpd)"].values[0] / Air.n2frac
-      n = (self.q(m, "mtpd") / self.q(mw, 'g/mol')).to('kmol/h')
+      nAir = df.loc[df["Component"] == "N2"]["Component Flow (kmol/h)"].values[0] / Air.n2frac
       
-      df = pd.concat([df, 
-                      pd.DataFrame({
-                              "Component": ["Air"],
-                              "Stoch Coeff": [Air.n2frac],
-                              "Molecular Weight (grams/mol)": [mw],
-                              "Component Flow (kmol/h)": [n.magnitude],
-                              "Mass Flow (mtpd)": [m],
-                              "Mass Flow (kg/h)": [self.q(m, "mtpd").to('kg/h').magnitude]
-                        })])
+      for comp in Air.CompList:
+        
+        mw = self.subs[comp].mass
+        n = nAir * Air.MassPercent(comp, True)
+        m = (self.q(n, "kmol/h") * self.q(mw, 'g/mol')).to('mtpd')
+      
+        df = pd.concat([df, 
+                        pd.DataFrame({
+                                "Component": [f"{comp}_air"],
+                                "Stoch Coeff": [Air.MassPercent(comp, True)],
+                                "Molecular Weight (grams/mol)": [mw],
+                                "Component Flow (kmol/h)": [n],
+                                "Mass Flow (mtpd)": [m.magnitude],
+                                "Mass Flow (kg/h)": [m.to('kg/h').magnitude]
+                          })])
 
     self.ombal = df.reset_index(drop=True).round(5).sort_values("Mass Flow (mtpd)")
     if verbose:
@@ -225,6 +254,9 @@ class Balance:
 if __name__ == "__main__":
   obal, fracConv = False, True
   fuel, urea = False, False
+
+  #y = Air.MassPercent("N2")
+  #print(y)
 
   x = Balance()
   if obal: x.OverallMaterialBalance(True)

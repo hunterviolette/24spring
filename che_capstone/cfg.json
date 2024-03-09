@@ -2,9 +2,11 @@
   "Compounds": [
     "MgCl2", "Mg", "Cl2", "N2", "H2O",
     "HCl", "NH3", "Mg3N2", "O2", "NH2COONH4",
-    "NH2CONH2", "CO2"
+    "NH2CONH2", "CO2", "Ar"
   ],
-  "initCompounds": ["MgCl2", "Air", "H2O"],
+  "initCompounds": ["MgCl2", "N2", 
+      "Ar_air", "CO2_air", "O2_air"
+  ],
   "OverallReaction": {
     "MgCl2": -3,
     "N2": -1,
@@ -16,8 +18,9 @@
   "Stages": {
     "0": ["EL-101", "PSA-101"],
     "1": ["R-101", "R-102"],
-    "2": ["PSA-102", "PSA-103"],
-    "3": ["R-103"]
+    "2": ["PSA-102"],
+    "3": ["R-103"],
+    "4": ["PSA-103"]
   },
   "Units": {
     "EL-101": {
@@ -38,19 +41,19 @@
         }
       },
     "PSA-101": {
-      "temperature": "273 K",
+      "temperature": "293 K",
       "pressure": "1 bar",
       "conversion": "1",
-      "inputs": {
-          "Air_src": {"Air": 1}
-        },
-      "reaction": {
-          "reagents": {
-            "Air": -1
-          },
-          "products": {
-            "N2": 0.7808
-          }
+      "source": {
+        "Air": {
+          "temperature": "293 K",
+          "pressure": "1 atm"
+        }
+      },
+      "seperation": {
+        "reagents": ["N2", "Ar_air", "CO2_air", "O2_air"],
+        "products": ["N2"],
+        "side": ["Ar_air", "CO2_air", "O2_air"]
         }
       },
     "R-101": {
@@ -96,6 +99,63 @@
               "Mg3N2": 1
             }
           }
-      }
+      },
+    "PSA-102": {
+      "temperature": "1000 K",
+      "pressure": "1 bar",
+      "conversion": "1",
+      "inputs": {
+          "R-101": {
+            "HCl": 1,
+            "H2O": 1,
+            "O2": 1
+          }
+        },
+      "seperation": {
+          "reagents": [
+            "HCl", "O2", "H2O"
+          ],
+          "products": ["HCl"],
+          "side": ["O2", "H2O"]
+        }
+      },
+    "PSA-103": {
+      "temperature": "920 K",
+      "pressure": "1 atm",
+      "conversion": "1",
+      "inputs": {
+          "R-103": {
+            "HCl": 1,
+            "NH3": 1
+          }
+        },
+      "seperation": {
+        "reagents": ["HCl", "NH3"],
+        "products": ["NH3"],
+        "side": ["HCl"]
+        }
+      },
+    "R-103": {
+      "temperature": "1100 K",
+      "pressure": "1 atm",
+      "conversion": ".8",
+      "inputs": {
+          "R-102": {"Mg3N2": 1}, 
+          "PSA-102": {"HCl": 1}
+        },
+      "recycle": {
+        "PSA-103": {"HCl": 1}
+      },
+      "limiting_reagent": "Mg3N2",
+      "reaction": {
+          "reagents": {
+            "Mg3N2": -1,
+            "HCl": -6
+          },
+          "products": {
+            "NH3": 2
+          }
+        }
+    }
   }
 }
