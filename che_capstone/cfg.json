@@ -53,17 +53,22 @@
           }
         }
       },
-      "R-101": {
+    "R-101": {
         "temperature": "1000 K",
         "pressure": "1 bar",
         "conversion": ".8",
         "inputs": {
-            "EL-101": {"Cl2": 1}, 
-            "Water_src": {"H2O": 1}
+            "EL-101": {"Cl2": 1} 
           },
+        "source": {
+          "H2O": {
+            "temperature": "293 K",
+            "pressure": "1 atm"
+          }
+        },
         "limiting_reagent": "Cl2",
         "reaction": {
-            "reagants": {
+            "reagents": {
               "Cl2": -3,
               "H2O": -3
             },
@@ -73,5 +78,24 @@
             }
           }
       },
+    "R-102": {
+        "temperature": "1100 K",
+        "pressure": "1 bar",
+        "conversion": ".8",
+        "inputs": {
+            "EL-101": {"Mg": 1}, 
+            "PSA-101": {"N2": 1}
+          },
+        "limiting_reagent": "Mg",
+        "reaction": {
+            "reagents": {
+              "Mg": -3,
+              "N2": -1
+            },
+            "products": {
+              "Mg3N2": 1
+            }
+          }
+      }
   }
 }
