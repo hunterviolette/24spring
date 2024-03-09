@@ -94,7 +94,6 @@ class SinglePass(Balance):
                 else: raise Exception("Limiting reagent not found")
 
         if unit_type != "PSA":
-          print(uo["flow"]["reagents"].keys(), uo["reaction"]["reagents"].keys())
           if uo["flow"]["reagents"].keys() == uo["reaction"]["reagents"].keys():
           
             if len(uo["reaction"]["reagents"].keys()) == 1: 
@@ -102,7 +101,6 @@ class SinglePass(Balance):
             else: reagent = uo["limiting_reagent"]
 
             for prod in uo["reaction"]["products"].keys():
-              # Add conditional to use mass basis instead of mole if reagent is air
               
               stoich = (uo["reaction"]["products"][prod] / 
                         abs(uo["reaction"]["reagents"][reagent]))
@@ -185,6 +183,9 @@ class SinglePass(Balance):
         pprint.pprint(f"=== Stage: {stage}, Unit: {unit} ===")
         pprint.pprint(self.c["Units"][unit])
       if stage == str(4): break
+    
+    with open('states/iter_0.json', 'w') as json_file:
+      json.dump(self.c, json_file, indent=4)
 
 if __name__ == "__main__":
   x = SinglePass()
