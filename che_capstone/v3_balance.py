@@ -1,5 +1,7 @@
+import periodictable
 import pandas as pd
 import pint
+import json 
 
 from chempy import Substance
 
@@ -21,33 +23,31 @@ Overall:
 
 '''
 
+class Air: 
+  mass = 28.9647
+  n2frac = .7808
+
 class Balance: 
-  def __init__(self) -> None:
+  def __init__(self, targetflow: int = 1 # in metric ton per day 
+            ) -> None:
+    
     uReg = pint.UnitRegistry(autoconvert_offset_to_baseunit = True)
     uReg.define('mtpd = metric_ton / day')
+    uReg.define('batch = 1 / (20*min)')
     uReg.define('million_BTU = 1e6 * BTU')
     uReg.define('dollar = [currency] = $')
 
     self.q = uReg.Quantity
+    self.targetFlow = self.q(targetflow, 'mtpd')
 
-    self.targetFlow = self.q(1, 'mtpd')
+    with open("./cfg.json", "r") as f: self.c = json.load(f)
 
     self.subs = {
-      'MgCl2': Substance.from_formula('MgCl2'),
-      'Mg': Substance.from_formula('Mg'),
-      'Cl2': Substance.from_formula('Cl2'),
-      'N2': Substance.from_formula('N2'),
-      'H2O': Substance.from_formula('H2O'),
-      'HCl': Substance.from_formula('HCl'),
-      'NH3': Substance.from_formula('NH3'),
-      'Mg3N2': Substance.from_formula('Mg3N2'),
-      'O2': Substance.from_formula('O2'),
-      'CO2': Substance.from_formula('CO2'),
-      'NH2COONH4': Substance.from_formula('NH2COONH4'),
-      'NH2CONH2': Substance.from_formula('NH2CONH2'),
-    }
+      x: Substance.from_formula(x) for x in self.c["Compounds"]}
+    
+    self.subs["Air"] = Air
 
-  def OverallMaterialBalance(self, verbose:bool=False):
+  def OverallMaterialBalance(self, verbose:bool=False) -> None:
 
     targetMW = self.q(self.subs["NH3"].mass, 'gram/mol')
     molph = (self.targetFlow / targetMW).to('kmol/h')
@@ -75,7 +75,22 @@ class Balance:
                             "Mass Flow (mtpd)": [massFlow.magnitude],
                             "Mass Flow (kg/h)": [massFlow.to('kg/h').magnitude]
                       })])
+    
+    if "N2" in df["Component"].unique():
+      mw = self.subs["Air"].mass
+      m = df.loc[df["Component"] == "N2"]["Mass Flow (mtpd)"].values[0] / Air.n2frac
+      n = (self.q(m, "mtpd") / self.q(mw, 'g/mol')).to('kmol/h')
       
+      df = pd.concat([df, 
+                      pd.DataFrame({
+                              "Component": ["Air"],
+                              "Stoch Coeff": [Air.n2frac],
+                              "Molecular Weight (grams/mol)": [mw],
+                              "Component Flow (kmol/h)": [n.magnitude],
+                              "Mass Flow (mtpd)": [m],
+                              "Mass Flow (kg/h)": [self.q(m, "mtpd").to('kg/h').magnitude]
+                        })])
+
     self.ombal = df.reset_index(drop=True).round(5).sort_values("Mass Flow (mtpd)")
     if verbose:
       print('=== ===',
@@ -110,9 +125,9 @@ class Balance:
           '',
           sep='\n\n')
 
-  def FractionalConversion(self, verbose: bool=False):
-    Balance.OverallMaterialBalance(self, verbose)
-    df = self.ombal.copy()
+  def FractionalConversion(self, verbose:bool=False) -> None:
+    Balance.UreaUnit(self)
+    df = self.df.copy()
 
     self.flowCols = ["Component Flow (kmol/h)", 
                     "Mass Flow (mtpd)", 
@@ -123,7 +138,7 @@ class Balance:
         
     scalar = (self.targetFlow / nh3Flow).__round__(5).magnitude 
     
-    df = self.ombal.copy()
+    df = self.df.copy()
     if verbose: print(f"60 minute batch, 100% conversion", df, sep='\n')
     for col in self.flowCols: df[col] = df[col] * scalar
     
@@ -148,11 +163,11 @@ class Balance:
     if verbose:
       print(f"Total scaledown with 20 min batch, 80% conversion with recyle: {s}")
     
-    self.df = df
+    self.batchFlows, self.totalFlows = df.rename(columns=self.renameDict), self.df
 
-  def UreaUnit(self):
-    Balance.FractionalConversion(self)
-    df = self.df.copy()
+  def UreaUnit(self, verbose:bool=False) -> None:
+    Balance.OverallMaterialBalance(self)
+    df = self.ombal.copy()
 
     for x in [[1, "NH2COONH4"], [1, "NH2CONH2"], [-1, "CO2"],
               [-1, "H2O"]]:
@@ -163,7 +178,7 @@ class Balance:
       
       molFlow = (self.q(nmol / 2 * stoich, 'kmol/h')).__round__(3)
       massFlow = (molFlow * mw).to("mtpd").__round__(3)
-      if x[1] == "H2O": x[1] = "H2O (amm carb)"
+      if x[1] == "H2O": x[1] = "H2O (amm carb recy)"
       df = pd.concat([df,
                       pd.DataFrame({
                             "Component": [x[1]],
@@ -175,10 +190,11 @@ class Balance:
                       })])
     
     self.df = df.reset_index(drop=True)
+    if verbose: print(self.df)
 
-  def FuelBurner(self):
+  def FuelBurner(self, verbose:bool=False) -> None:
     Balance.UreaUnit(self)
-    df = self.df.copy()
+    df = self.ombal.copy()
     print(df.rename(columns=self.renameDict).round(3))
 
     nCO2 = self.q(df.loc[
@@ -196,18 +212,22 @@ class Balance:
     
     ngPrice = self.q(9.53119, 'dollar / million_BTU')
 
-    print(
-      f"Total mols of CO2 required {nCO2}",
-      f"Mass of CO2 required: {mCO2.to('mtpd').__round__(3)}",
-      f"Cost of CH4: {(ngPrice * lhv).to('dollar/day').__round__(3)}",
-      f"Water generated by CH4 combustion: {water}",
-      f"Natural gas heating values 42-55 (MJ/kg)",
-      f"Heat generated: {lhv.magnitude} - {hhv} GJ/day",
-      sep='\n')
-
-
+    if verbose: 
+      print(
+        f"Total mols of CO2 required {nCO2}",
+        f"Mass of CO2 required: {mCO2.to('mtpd').__round__(3)}",
+        f"Cost of CH4: {(ngPrice * lhv).to('dollar/day').__round__(3)}",
+        f"Water generated by CH4 combustion: {water}",
+        f"Natural gas heating values 42-55 (MJ/kg)",
+        f"Heat generated: {lhv.magnitude} - {hhv} GJ/day",
+        sep='\n')
 
 if __name__ == "__main__":
+  obal, fracConv = False, True
+  fuel, urea = False, False
 
   x = Balance()
-  x.FuelBurner()
+  if obal: x.OverallMaterialBalance(True)
+  if fracConv: x.FractionalConversion(True)
+  if urea: x.UreaUnit(True)
+  if fuel: x.FuelBurner(True)

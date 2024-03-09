@@ -1,0 +1,77 @@
+{
+  "Compounds": [
+    "MgCl2", "Mg", "Cl2", "N2", "H2O",
+    "HCl", "NH3", "Mg3N2", "O2", "NH2COONH4",
+    "NH2CONH2", "CO2"
+  ],
+  "initCompounds": ["MgCl2", "Air", "H2O"],
+  "OverallReaction": {
+    "MgCl2": -3,
+    "N2": -1,
+    "H2O": -3,
+    "NH3": 2,
+    "O2": 1.5,
+    "MgCl2_r": 3
+  },
+  "Stages": {
+    "0": ["EL-101", "PSA-101"],
+    "1": ["R-101", "R-102"],
+    "2": ["PSA-102", "PSA-103"],
+    "3": ["R-103"]
+  },
+  "Units": {
+    "EL-101": {
+      "temperature": "1000 K",
+      "pressure": "1 bar",
+      "conversion": ".8",
+      "inputs": {
+          "R-103": {"MgCl2": 1}
+        },
+      "reaction": {
+          "reagents": {
+            "MgCl2": -1
+          },
+          "products": {
+            "Cl2": 1,
+            "Mg": 1
+          }
+        }
+      },
+    "PSA-101": {
+      "temperature": "273 K",
+      "pressure": "1 bar",
+      "conversion": "1",
+      "inputs": {
+          "Air_src": {"Air": 1}
+        },
+      "reaction": {
+          "reagents": {
+            "Air": -1
+          },
+          "products": {
+            "N2": 0.7808
+          }
+        }
+      },
+      "R-101": {
+        "temperature": "1000 K",
+        "pressure": "1 bar",
+        "conversion": ".8",
+        "inputs": {
+            "EL-101": {"Cl2": 1}, 
+            "Water_src": {"H2O": 1}
+          },
+        "limiting_reagent": "Cl2",
+        "reaction": {
+            "reagants": {
+              "Cl2": -3,
+              "H2O": -3
+            },
+            "products": {
+              "O2": 1.5,
+              "HCl": 6
+            }
+          }
+      },
+  }
+}
