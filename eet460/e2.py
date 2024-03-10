@@ -172,7 +172,7 @@ class e2:
 
     def DynamicViscosity(self, t, phase='liquid'):
       # Yaws critical properties Table 82.
-      
+
       if isinstance(t, int): t = float(t)
       if not isinstance(t, float): t = t.magnitude
 
@@ -193,7 +193,6 @@ class e2:
               )
       
     dynamic_viscosity = DynamicViscosity(self, temperature.to("degK").magnitude)
-    print(dynamic_viscosity)
 
     head = (reservoir_elevation - power_plant_elevation).to('m')
     pressure_change = (inlet_pressure - self.q(1,'atm')).to("Pa")
