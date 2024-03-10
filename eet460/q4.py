@@ -28,7 +28,7 @@ class q4:
 
   def two(self):
     '''
-    A geothermal power plant uses hot water from a production well at 140oC, 
+    A geothermal power plant uses hot water from a production well at 140C, 
     and rejects heat to surroundings from a cooling tower at 17oC.  
     The maximum theoretical efficiency of this power plant is
     '''
