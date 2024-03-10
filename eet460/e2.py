@@ -106,6 +106,10 @@ class e2:
     e2.pprnt(power_input)
 
   def seven(self):
+    '''
+    A diesel engine generator delivers 4500 kW with a specific fuel consumption of 215 g/kWh.
+    Assuming diesel fuel with an LHV = 42.75MJ/kg, estimate the efficiency of this engine.
+    '''
     power_output = self.q(4500, 'kW')  
     fuel_consumption = self.q(215, 'g/kWh').to('kg/kWh')
     lhv_diesel = self.q(42.75, 'MJ/kg')  
@@ -116,6 +120,10 @@ class e2:
     e2.pprnt(efficiency, rounding=5)
 
   def eight(self):
+    '''
+    A turbine at a large hydropower dam has a head of 78 m and a flow rate of 68 m3/s. 
+    The turbine output is 45 MW. Assuming no head losses, estimate the efficiency of the turbine.
+    '''
     density_water = self.q(1000, 'kg/m**3')
     flow_rate = self.q(68, 'm**3/s')
     head = self.q(78, 'm')
@@ -127,6 +135,11 @@ class e2:
     e2.pprnt(efficiency, rounding=5)
 
   def nine(self):
+    '''
+    A microturbine requires 5.9 MMBTU/hr of natural gas to develop its rated electrical power
+      output of 600 kW. In addition, The microturbine supplies 2.4 MMBTU/hr of useable thermal 
+      energy in its exhaust. What is the total (CHP) efficiency of this microturbine?
+    '''
     electrical_power = self.q(600, 'kW')  
     gas_input = self.q(5.9, 'MBTU/h')
     thermal_output = self.q(2.4, 'MBTU/h')
@@ -137,6 +150,12 @@ class e2:
     e2.pprnt(efficiency, rounding=5)
 
   def ten(self):
+    '''
+    The water surface of the reservoir is at an elevation of 326 m.  
+    A penstock with a length of 6.4 km supplies water from the reservoir 
+    to a power plant at an elevation of 18m above sea level. 
+    If the turbine inlet pressure is 2.4 MPa, estimate the head losses in the penstock.
+    '''
     # Process fluid is water
     reservoir_elevation = self.q(326, 'm')
     penstock_length = self.q(6.4, 'km')
