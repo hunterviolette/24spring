@@ -164,16 +164,36 @@ class e2:
     power_plant_elevation = self.q(18, 'm')
     inlet_pressure = self.q(2.4, 'MPa')
     density = self.q(1000, 'kg/m**3')
+    temperature = self.q(5, 'degC')
     
     # pipe diamter 
     diameter = self.q(200, 'm') # unreasonable input, reasonable answer
     diameter = self.q(5, 'm') # pushing limits already, unreasonable answeer
 
-    # Yaws critical properties Table 82. Viscosity of Liquid 25C
-    dynamic_viscosity = self.q(0.8818, 'cP') 
+    def DynamicViscosity(self, t, phase='liquid'):
+      # Yaws critical properties Table 82.
+      
+      if isinstance(t, int): t = float(t)
+      if not isinstance(t, float): t = t.magnitude
 
-    # Yaws critical properties Table 82. Viscosity of Liquid 5C
-    dynamic_viscosity = self.q(1.468, 'cP') 
+      if phase == 'liquid':
+        c = {
+          "A": -11.62248,
+          "B": 1948.963,
+          "C": 0.02164143,
+          "D": -1.599012E-05
+        }
+        return self.q(
+                math.pow(10, (
+                  c["A"] + 
+                  (c["B"] / t) + 
+                  (c["C"] * t) + 
+                  (c["D"] * t**2)
+                )), 'cP'
+              )
+      
+    dynamic_viscosity = DynamicViscosity(self, temperature.to("degK").magnitude)
+    print(dynamic_viscosity)
 
     head = (reservoir_elevation - power_plant_elevation).to('m')
     pressure_change = (inlet_pressure - self.q(1,'atm')).to("Pa")
