@@ -5,6 +5,11 @@ import json
 
 from chempy import Substance
 
+if __name__ == "__main__":
+  from unit_registry import UnitConversion
+else:
+  from src.unit_registry import UnitConversion
+
 '''
 # Electrolysis
   MgCl2 -> Mg + Cl2
@@ -52,23 +57,24 @@ class Air:
               / q(Air.mass, 'g/mol') * fracs[comp]
             ).magnitude
 
-class Balance: 
-  def __init__(self, targetflow: int = 1 # in metric ton per day 
+class Balance(UnitConversion): 
+  def __init__(self, 
+              targetflow: int = 1, # in metric ton per day
+              targetCompound: str = "NH3" 
             ) -> None:
     
-    uReg = pint.UnitRegistry(autoconvert_offset_to_baseunit = True)
-    uReg.define('mtpd = metric_ton / day')
-    uReg.define('batch = 1 / (20*min)')
-    uReg.define('million_BTU = 1e6 * BTU')
-    uReg.define('dollar = [currency] = $')
-
-    self.q = uReg.Quantity
+    super().__init__()
+    
     self.targetFlow = self.q(targetflow, 'mtpd')
 
     with open("./cfg.json", "r") as f: self.c = json.load(f)
 
     self.subs = {
       x: Substance.from_formula(x) for x in self.c["Compounds"]}
+    
+    if not targetCompound in self.subs.keys(): 
+      raise Exception(f"{targetCompound} not a key in Compounds in cfg.json")
+    else: self.targetCompound = targetCompound
     
     self.subs["Air"] = Air
 
@@ -130,30 +136,6 @@ class Balance:
             '',
             sep='\n\n')
     
-  def ReactorVolume(self):
-    Balance.OverallMaterialBalance(self)
-    col = "Mass Flow (mtpd)"
-
-    molFlow = self.q(self.ombal.at[3, 'Component Flow (kmol/h)'], 'kmol/h')
-    nh3syn = self.q(10**-6, 'mol/cm**2/s')
-
-    nh3 = self.q(self.ombal.at[3, col], 'mtpd')
-    hcl = self.q(self.ombal.at[7, col], "mtpd")
-    mg3n2 = self.q(self.ombal.at[6, col], "mtpd")
-    mgcl2 = self.q(self.ombal.at[5, col], "mtpd")
-
-    print('=== R-104 ===', 
-          f'Input = HCl (g): {hcl}, Mg3N2 (s): {mg3n2}',
-          f'Output = MgCl2 (l): {mgcl2}, NH3 (g): {nh3}',
-          f'(Output - Input) = {(nh3 + mgcl2 + hcl + mg3n2).__round__(4)}',
-          f"NH3 (total/stored/recycled): {nh3}, {nh3*2/8}, {nh3*6/8}",
-          '=== R-104 Design ===',
-          f"NH3 Synthesis Rate: {nh3syn}",
-          f"Area (net): {(molFlow / nh3syn).to('m**2').__round__(3)}",
-          f"Area (total): {(molFlow / nh3syn * 4).to('m**2').__round__(3)}",
-          '',
-          sep='\n\n')
-
   def FractionalConversion(self, verbose:bool=False) -> None:
     Balance.UreaUnit(self)
     df = self.df.copy()

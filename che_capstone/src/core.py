@@ -1,22 +1,28 @@
 import pandas as pd
-import pint
 import pprint
 import json
 
-from chempy import Substance
+if __name__ == "__main__":
+  from v3_balance import Balance
+  from thermal_analysis import Therm
+else:
+  from src.v3_balance import Balance
+  from src.thermal_analysis import Therm
 
-from v3_balance import Balance
-
-class SinglePass(Balance):
+class SinglePass(Balance, Therm):
 
   def __init__(self, 
-              targetFlow: int = 1 # mtpd 
+              targetFlow: int = 1, # mtpd
+              targetCompound: str = "NH3"  
             ) -> None:
     
-    super().__init__(targetflow=targetFlow)
+    Balance.__init__(self, targetFlow, targetCompound)
+
     SinglePass.FractionalConversion(self)
     self.batchFlows = self.batchFlows.drop(
       columns=["Stoch Coeff", "Mass Flow (mtpd/20-min-batch)"])
+    
+    print(self.batchFlows)
     
     self.cols = {
           "mw": 'Molecular Weight (grams/mol)',
@@ -24,7 +30,7 @@ class SinglePass(Balance):
           "m": "Mass Flow (kg/20-min-batch)"
         }
 
-  def main(self):
+  def core(self, write:bool=False):
     cfg = self.c
     for stage in cfg["Stages"]:
       for unit in cfg["Stages"][stage]:
@@ -182,11 +188,16 @@ class SinglePass(Balance):
 
         pprint.pprint(f"=== Stage: {stage}, Unit: {unit} ===")
         pprint.pprint(self.c["Units"][unit])
+      
       if stage == str(4): break
     
-    with open('states/iter_0.json', 'w') as json_file:
-      json.dump(self.c, json_file, indent=4)
+    if write: 
+      with open('states/iter_0.json', 'w') as json_file:
+        json.dump(self.c, json_file, indent=4)
+
+  def features(self):
+    SinglePass.core(self)
 
 if __name__ == "__main__":
   x = SinglePass()
-  x.main()
+  x.core()
