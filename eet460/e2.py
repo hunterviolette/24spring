@@ -100,7 +100,7 @@ class e2:
     '''
 
     cop = 4.5
-    heating_output = self.q(120000, 'BTU/hr')  # Heating output in BTU/hr
+    heating_output = self.q(120000, 'BTU/hr')
     power_input = (heating_output / cop).to('kW')
 
     e2.pprnt(power_input)
@@ -143,17 +143,24 @@ class e2:
     power_plant_elevation = self.q(18, 'm')
     inlet_pressure = self.q(2.4, 'MPa')
     density = self.q(1000, 'kg/m**3')
-    diameter = self.q(5, 'm') 
+    
+    # pipe diamter 
+    diameter = self.q(200, 'm') # unreasonable input, reasonable answer
+    diameter = self.q(5, 'm') # pushing limits already, unreasonable answeer
+
+    # Yaws critical properties Table 82. Viscosity of Liquid 25C
+    dynamic_viscosity = self.q(0.8818, 'cP') 
 
     # Yaws critical properties Table 82. Viscosity of Liquid 5C
     dynamic_viscosity = self.q(1.468, 'cP') 
 
-    head_difference = reservoir_elevation - power_plant_elevation
+    head = (reservoir_elevation - power_plant_elevation).to('m')
+    pressure_change = (inlet_pressure - self.q(1,'atm')).to("Pa")
 
     # Calculate fluid velocity using the Bernoulli equation
     fluid_velocity = (self.q(math.sqrt((
-                        (2 * inlet_pressure.to('Pa') / density)
-                        + 2 * self.g * head_difference
+                        (2 * pressure_change / density)
+                        + 2 * self.g * head
                       ).to("m**2/s**2").magnitude
                     ), 'm/s'))
 
@@ -177,7 +184,7 @@ class e2:
           / (2 * self.g * diameter))
       ).to('m')
     
-    vars = {
+    inputs = {
         "high elevation": reservoir_elevation,
         "low elevation": power_plant_elevation,
         "penstock lenth": penstock_length,
@@ -188,11 +195,11 @@ class e2:
     
     print("===== Problem 10 =====")
     print("=== Input variables ===")
-    for var in vars.keys(): 
-      print(f"{var}: {vars[var].__round__(3)}")
+    for var in inputs.keys(): 
+      print(f"{var}: {inputs[var].__round__(3)}")
 
-    vars = {
-        "change in elevation": head_difference,
+    outputs = {
+        "head": head,
         "friction factor": friction_factor,
         "fluid velocity": fluid_velocity,
         "dynamic viscosity": dynamic_viscosity,
@@ -201,8 +208,8 @@ class e2:
       }
     
     print("=== Export variables ===")
-    for var in vars.keys(): 
-      print(f"{var}: {vars[var].__round__(3)}")
+    for var in outputs.keys(): 
+      print(f"{var}: {outputs[var].__round__(3)}")
   
 x = e2()
 
