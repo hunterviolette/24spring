@@ -1,9 +1,9 @@
 import pint
+import math
+import numpy as np
 
 from scipy import optimize
 from chempy import Substance
-import math
-import numpy as np
 
 class e2:
   def __init__(self) -> None:
@@ -13,10 +13,12 @@ class e2:
 
     self.g = self.q(9.81, 'm/s**2')
     self.h2mass = self.q(Substance.from_formula('H2').mass, 'gram/mol')
+    self.probCount = 0
   
-  @staticmethod
-  def pprnt(x, rounding: int = 2):
-    print(round(x,rounding))
+  def pprnt(self, x, rounding: int = 2):
+    self.probCount+=1
+
+    print(f"Problem {self.probCount}: {round(x,rounding)}")
 
   def one(self):
     '''
@@ -26,7 +28,7 @@ class e2:
 
     theoOutput = (self.q(900, 'MW') * self.q(1,'yr').to('h') / self.q(1,'yr')
                 ).to('GWh/yr')
-    e2.pprnt(
+    e2.pprnt(self, 
       (self.q(7210, "GWh/yr") / theoOutput).to_base_units()
     , rounding=5)
 
@@ -45,7 +47,7 @@ class e2:
     eOutput = (power_output * self.q(24, 'h')).to('kJ')
 
     eff = (eOutput / eInput).to_base_units()
-    e2.pprnt(eff, 5)
+    e2.pprnt(self, eff, 5)
 
   def three(self):
     '''
@@ -59,7 +61,7 @@ class e2:
     energy_input = (electricity_output + heat_rejected).to('kW')
     efficiency = (electricity_output / energy_input).to_base_units()
 
-    e2.pprnt(efficiency, rounding=5)
+    e2.pprnt(self, efficiency, rounding=5)
 
   def four(self):
     '''
@@ -72,7 +74,7 @@ class e2:
 
     eer = (cooling_capacity / power_input).to_base_units()
 
-    e2.pprnt(eer, rounding=5)
+    e2.pprnt(self, eer, rounding=5)
 
   def five(self):
     '''
@@ -91,7 +93,7 @@ class e2:
     mass_flow_rate = (volume_flow_rate * density_water).to('kg/s')
     thermal_power = (mass_flow_rate * specific_heat_water * (outlet_temp - base_temp)).to('MW')
 
-    e2.pprnt(thermal_power)
+    e2.pprnt(self, thermal_power)
 
   def six(self):
     '''
@@ -103,7 +105,7 @@ class e2:
     heating_output = self.q(120000, 'BTU/hr')
     power_input = (heating_output / cop).to('kW')
 
-    e2.pprnt(power_input)
+    e2.pprnt(self, power_input)
 
   def seven(self):
     '''
@@ -117,7 +119,7 @@ class e2:
     energy_input = (fuel_consumption * power_output * lhv_diesel)
     efficiency = ((power_output / energy_input)).to_base_units()
 
-    e2.pprnt(efficiency, rounding=5)
+    e2.pprnt(self, efficiency, rounding=5)
 
   def eight(self):
     '''
@@ -132,7 +134,7 @@ class e2:
     power_input = (density_water * self.g * flow_rate * head)
     efficiency = (power_output / power_input).to_base_units()
 
-    e2.pprnt(efficiency, rounding=5)
+    e2.pprnt(self, efficiency, rounding=5)
 
   def nine(self):
     '''
@@ -147,7 +149,7 @@ class e2:
     total_output = (electrical_power + thermal_output)
     efficiency = (total_output / gas_input).to_base_units()
 
-    e2.pprnt(efficiency, rounding=5)
+    e2.pprnt(self, efficiency, rounding=5)
 
   def ten(self):
     '''
@@ -193,8 +195,12 @@ class e2:
               + (f / (3.71 * D))) - 1.0 / np.sqrt(f))
     
     initial_guess = 0.001  # Initial guess for friction factor
-    friction_factor =optimize.newton(colebrook, initial_guess, maxiter=1000,
-                    args=(reynolds_number.magnitude, diameter.magnitude))
+    friction_factor = optimize.newton(
+                        colebrook, initial_guess, maxiter=1000,
+                        args=(reynolds_number.magnitude, 
+                              diameter.magnitude
+                            )
+                      )
     
 
     # Calculate the head losses using Darcy-Weisbach equation    
