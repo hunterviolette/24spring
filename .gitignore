@@ -6,3 +6,4 @@ bmb_capstone/vol/predictions/*
 bmb_capstone/vol/image_loader
 bmb_capstone/vol/sample/vsi_data/*
 bmb_capstone/vol/models/*/
+che_capstone/src/tmp/*

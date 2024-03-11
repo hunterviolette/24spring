@@ -65,7 +65,6 @@ class Therm(UnitConversion):
         
     ## Unit properties
     for unit in cfg["Units"]:
-      print(unit)
       uo = cfg["Units"][unit]
       
       if not "PSA" in unit: 
@@ -91,8 +90,6 @@ class Therm(UnitConversion):
             
             p1 = uo["pressure"].split(" ")
             p1 = self.q(float(p[0]), p[1]).to("Pa")
-
-            print(cfg["Compounds"][reag])
 
             chem = Chemical(
                     cfg["Compounds"][reag],

@@ -22,7 +22,6 @@ class SinglePass(Balance, Therm):
     
     self.cPath = cfgPath
     Balance.__init__(self, targetFlow, targetCompound, cfgPath)
-    #Therm.__init__(self, cfgPath)
 
     SinglePass.FractionalConversion(self)
     self.batchFlows = self.batchFlows.drop(
