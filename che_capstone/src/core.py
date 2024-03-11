@@ -35,7 +35,7 @@ class SinglePass(Balance, Therm):
           "m": "Mass Flow (kg/20-min-batch)"
         }
 
-  def core(self, write:bool=False):
+  def IterFlows(self, write:bool=False, itr:int=0):
     cfg = self.c
     for stage in cfg["Stages"]:
       for unit in cfg["Stages"][stage]:
@@ -196,20 +196,19 @@ class SinglePass(Balance, Therm):
       
       if stage == str(4): break
     
-    if write: 
-      with open('states/iter_0.json', 'w') as json_file:
-        json.dump(self.c, json_file, indent=4)
+    if write:
+      with open(f'states/iter_{itr}.json', 'w') as js:
+        json.dump(self.c, js, indent=4)
 
-  def features(self, dir: Optional[str] = None):
-    SinglePass.core(self, False)
+  def features(self):
+    SinglePass.IterFlows(self, False)
 
-    #Therm.__init__(self, self.cPath)
-    SinglePass.ThermalProperties(self)
+    SinglePass.ThermalProperties(self, True)
     
 if __name__ == "__main__":
   core, feat = False, True
   x = SinglePass()
 
-  if core: x.core(True)
+  if core: x.IterFlows(True)
   if feat: x.features()
   

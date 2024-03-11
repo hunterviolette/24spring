@@ -1,19 +1,19 @@
 {
-    "Compounds": [
-        "MgCl2",
-        "Mg",
-        "Cl2",
-        "N2",
-        "H2O",
-        "HCl",
-        "NH3",
-        "Mg3N2",
-        "O2",
-        "NH2COONH4",
-        "NH2CONH2",
-        "CO2",
-        "Ar"
-    ],
+    "Compounds": {
+        "MgCl2": "7786-30-3",
+        "Mg": "magnesium",
+        "Cl2": "chlorine",
+        "N2": "nitrogen",
+        "H2O": "7732-18-5",
+        "HCl": "7647-01-0",
+        "NH3": "7664-41-7",
+        "Mg3N2": "12057-71-5",
+        "O2": "oxygen",
+        "NH2COONH4": "1111-78-0",
+        "NH2CONH2": "57-13-6",
+        "CO2": "124-38-9",
+        "Ar": "argon"
+    },
     "initCompounds": [
         "MgCl2",
         "N2",
@@ -51,7 +51,7 @@
     "Units": {
         "EL-101": {
             "temperature": "1000 K",
-            "pressure": "1 bar",
+            "pressure": "1 atm",
             "conversion": ".8",
             "inputs": {
                 "R-103": {
@@ -93,7 +93,7 @@
         },
         "PSA-101": {
             "temperature": "293 K",
-            "pressure": "1 bar",
+            "pressure": "1 atm",
             "conversion": "1",
             "source": {
                 "Air": {
@@ -160,7 +160,7 @@
         },
         "R-101": {
             "temperature": "1000 K",
-            "pressure": "1 bar",
+            "pressure": "1 atm",
             "conversion": ".8",
             "inputs": {
                 "EL-101": {
@@ -217,7 +217,7 @@
         },
         "R-102": {
             "temperature": "1100 K",
-            "pressure": "1 bar",
+            "pressure": "1 atm",
             "conversion": ".8",
             "inputs": {
                 "EL-101": {
@@ -267,7 +267,7 @@
         },
         "PSA-102": {
             "temperature": "1000 K",
-            "pressure": "1 bar",
+            "pressure": "1 atm",
             "conversion": "1",
             "inputs": {
                 "R-101": {
@@ -396,7 +396,8 @@
                     "HCl": -6
                 },
                 "products": {
-                    "NH3": 2
+                    "NH3": 2,
+                    "MgCl2": 3
                 }
             },
             "flow": {
@@ -414,6 +415,10 @@
                     "NH3": {
                         "Component Flow (kmol/20-min-batch)": 0.417562565362688,
                         "Mass Flow (kg/20-min-batch)": 7.111508050691938
+                    },
+                    "MgCl2": {
+                        "Component Flow (kmol/20-min-batch)": 0.6263438480440321,
+                        "Mass Flow (kg/20-min-batch)": 59.631066053032086
                     },
                     "Mg3N2": {
                         "Component Flow (kmol/20-min-batch)": 0.052195320670335985,

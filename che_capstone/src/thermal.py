@@ -33,7 +33,7 @@ class Therm(UnitConversion):
       print(f"Data for {name} is not available. Error: {e}")
       return False
         
-  def ThermalProperties(self):
+  def ThermalProperties(self, write:bool=False, itr:int=0):
     cfg = self.c
 
     # Overall properties
@@ -141,8 +141,9 @@ class Therm(UnitConversion):
             uo.setdefault("properties", {}).update({
               reag : "No properties found"})
 
-    with open('states/state_0_therm.json', 'w') as j:
-      json.dump(cfg, j, indent=4)
+    if write:
+      with open(f'states/state_{itr}_therm.json', 'w') as j:
+        json.dump(cfg, j, indent=4)
 
 if __name__ == "__main__":
   x = Therm().ThermalProperties()
