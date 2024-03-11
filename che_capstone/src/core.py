@@ -1,22 +1,28 @@
 import pandas as pd
 import pprint
 import json
+import os
 
-if __name__ == "__main__":
-  from v3_balance import Balance
-  from thermal_analysis import Therm
-else:
-  from src.v3_balance import Balance
-  from src.thermal_analysis import Therm
+from typing import Optional
+
+if os.getcwd().split("/")[-1].endswith("src"):
+  from balance import Balance
+  from thermal import Therm
+else: 
+  from src.balance import Balance
+  from src.thermal import Therm
 
 class SinglePass(Balance, Therm):
 
   def __init__(self, 
               targetFlow: int = 1, # mtpd
-              targetCompound: str = "NH3"  
+              targetCompound: str = "NH3",
+              cfgPath: str = "./cfg.json"
             ) -> None:
     
-    Balance.__init__(self, targetFlow, targetCompound)
+    self.cPath = cfgPath
+    Balance.__init__(self, targetFlow, targetCompound, cfgPath)
+    #Therm.__init__(self, cfgPath)
 
     SinglePass.FractionalConversion(self)
     self.batchFlows = self.batchFlows.drop(
@@ -195,9 +201,16 @@ class SinglePass(Balance, Therm):
       with open('states/iter_0.json', 'w') as json_file:
         json.dump(self.c, json_file, indent=4)
 
-  def features(self):
-    SinglePass.core(self)
+  def features(self, dir: Optional[str] = None):
+    SinglePass.core(self, False)
 
+    #Therm.__init__(self, self.cPath)
+    SinglePass.ThermalProperties(self)
+    
 if __name__ == "__main__":
+  core, feat = False, True
   x = SinglePass()
-  x.core()
+
+  if core: x.core(True)
+  if feat: x.features()
+  

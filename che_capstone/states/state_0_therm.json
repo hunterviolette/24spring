@@ -1,0 +1,618 @@
+{
+    "Compounds": {
+        "MgCl2": "7786-30-3",
+        "Mg": "magnesium",
+        "Cl2": "chlorine",
+        "N2": "nitrogen",
+        "H2O": "7732-18-5",
+        "HCl": "7647-01-0",
+        "NH3": "7664-41-7",
+        "Mg3N2": "12057-71-5",
+        "O2": "oxygen",
+        "NH2COONH4": "1111-78-0",
+        "NH2CONH2": "57-13-6",
+        "CO2": "124-38-9",
+        "Ar": "argon"
+    },
+    "initCompounds": [
+        "MgCl2",
+        "N2",
+        "Ar_air",
+        "CO2_air",
+        "O2_air"
+    ],
+    "OverallReaction": {
+        "MgCl2": -3,
+        "N2": -1,
+        "H2O": -3,
+        "NH3": 2,
+        "O2": 1.5,
+        "MgCl2_r": 3
+    },
+    "Stages": {
+        "0": [
+            "EL-101",
+            "PSA-101"
+        ],
+        "1": [
+            "R-101",
+            "R-102"
+        ],
+        "2": [
+            "PSA-102"
+        ],
+        "3": [
+            "R-103"
+        ],
+        "4": [
+            "PSA-103"
+        ]
+    },
+    "Units": {
+        "EL-101": {
+            "temperature": "1000 K",
+            "pressure": "1 atm",
+            "conversion": ".8",
+            "inputs": {
+                "R-103": {
+                    "MgCl2": 1
+                }
+            },
+            "reaction": {
+                "reagents": {
+                    "MgCl2": -1
+                },
+                "products": {
+                    "Cl2": 1,
+                    "Mg": 1
+                }
+            },
+            "flow": {
+                "reagents": {
+                    "MgCl2": {
+                        "Component Flow (kmol/20-min-batch)": -1.223327828211,
+                        "Mass Flow (kg/20-min-batch)": -116.4716991966811
+                    }
+                },
+                "products": {
+                    "Cl2": {
+                        "Component Flow (kmol/20-min-batch)": 0.9786622625688001,
+                        "Mass Flow (kg/20-min-batch)": 69.38715441612793
+                    },
+                    "Mg": {
+                        "Component Flow (kmol/20-min-batch)": 0.9786622625688001,
+                        "Mass Flow (kg/20-min-batch)": 23.786386291734686
+                    },
+                    "MgCl2": {
+                        "Component Flow (kmol/20-min-batch)": -0.24466556564219996,
+                        "Mass Flow (kg/20-min-batch)": -23.294339839336214
+                    }
+                }
+            },
+            "source": {},
+            "properties": {
+                "MgCl2": {
+                    "t0 (K)": 1100.0,
+                    "t1 (K)": 1000.0,
+                    "p0 (bar)": 1.01325,
+                    "p1 (bar)": 1.01325,
+                    "dH (kJ/mol)": 99.3380765373936,
+                    "excess dH (kJ/mol)": 0.0,
+                    "dS (kJ/mol/K)": 0.13904824492639847,
+                    "excess dS (kJ/mol/K)": 0.0
+                }
+            }
+        },
+        "PSA-101": {
+            "temperature": "293 K",
+            "pressure": "1 atm",
+            "conversion": "1",
+            "source": {
+                "Air": {
+                    "temperature": "293 K",
+                    "pressure": "1 atm"
+                }
+            },
+            "seperation": {
+                "reagents": [
+                    "N2",
+                    "Ar_air",
+                    "CO2_air",
+                    "O2_air"
+                ],
+                "products": [
+                    "N2"
+                ],
+                "side": [
+                    "Ar_air",
+                    "CO2_air",
+                    "O2_air"
+                ]
+            },
+            "flow": {
+                "reagents": {
+                    "N2": {
+                        "Component Flow (kmol/20-min-batch)": -0.40766483212589993,
+                        "Mass Flow (kg/20-min-batch)": -11.416615290525
+                    },
+                    "Ar_air": {
+                        "Component Flow (kmol/20-min-batch)": -0.004876644721179,
+                        "Mass Flow (kg/20-min-batch)": -0.194815789972185
+                    },
+                    "CO2_air": {
+                        "Component Flow (kmol/20-min-batch)": -0.000183332508315,
+                        "Mass Flow (kg/20-min-batch)": -0.008043297137528998
+                    },
+                    "O2_air": {
+                        "Component Flow (kmol/20-min-batch)": -0.10936617450573,
+                        "Mass Flow (kg/20-min-batch)": -3.4995175850833795
+                    }
+                },
+                "products": {
+                    "N2": {
+                        "Component Flow (kmol/20-min-batch)": 0.40766483212589993,
+                        "Mass Flow (kg/20-min-batch)": 11.42032260717496
+                    }
+                },
+                "side": {
+                    "Ar_air": {
+                        "Component Flow (kmol/20-min-batch)": 0.004876644721179,
+                        "Mass Flow (kg/20-min-batch)": 0.19482195661110105
+                    },
+                    "CO2_air": {
+                        "Component Flow (kmol/20-min-batch)": 0.000183332508315,
+                        "Mass Flow (kg/20-min-batch)": 0.008068280358434836
+                    },
+                    "O2_air": {
+                        "Component Flow (kmol/20-min-batch)": 0.10936617450573,
+                        "Mass Flow (kg/20-min-batch)": 3.4994988518343484
+                    }
+                }
+            }
+        },
+        "R-101": {
+            "temperature": "1000 K",
+            "pressure": "1 atm",
+            "conversion": ".8",
+            "inputs": {
+                "EL-101": {
+                    "Cl2": 1
+                }
+            },
+            "source": {
+                "H2O": {
+                    "temperature": "293 K",
+                    "pressure": "1 atm"
+                }
+            },
+            "limiting_reagent": "Cl2",
+            "reaction": {
+                "reagents": {
+                    "Cl2": -3,
+                    "H2O": -3
+                },
+                "products": {
+                    "O2": 1.5,
+                    "HCl": 6
+                }
+            },
+            "flow": {
+                "reagents": {
+                    "Cl2": {
+                        "Component Flow (kmol/20-min-batch)": 1.9573245251376001,
+                        "Mass Flow (kg/20-min-batch)": 87.01775507630487
+                    },
+                    "H2O": {
+                        "Component Flow (kmol/20-min-batch)": 1.9573245251376001,
+                        "Mass Flow (kg/20-min-batch)": 35.26120132035387
+                    }
+                },
+                "products": {
+                    "O2": {
+                        "Component Flow (kmol/20-min-batch)": 0.7829298100550401,
+                        "Mass Flow (kg/20-min-batch)": 25.052188062141177
+                    },
+                    "HCl": {
+                        "Component Flow (kmol/20-min-batch)": 3.1317192402201606,
+                        "Mass Flow (kg/20-min-batch)": 114.17622005994663
+                    },
+                    "Cl2": {
+                        "Component Flow (kmol/20-min-batch)": 0.39146490502751996,
+                        "Mass Flow (kg/20-min-batch)": 17.40355101526097
+                    },
+                    "H2O": {
+                        "Component Flow (kmol/20-min-batch)": 0.39146490502751996,
+                        "Mass Flow (kg/20-min-batch)": 7.052240264070773
+                    }
+                }
+            },
+            "properties": {
+                "Cl2": {
+                    "t0 (K)": 1000.0,
+                    "t1 (K)": 1000.0,
+                    "p0 (bar)": 1.01325,
+                    "p1 (bar)": 1.01325,
+                    "dH (kJ/mol)": 26.17963221070196,
+                    "excess dH (kJ/mol)": 0.06715775976716441,
+                    "dS (kJ/mol/K)": 0.04443332487330467,
+                    "excess dS (kJ/mol/K)": 0.00014944245612246942
+                },
+                "H2O": {
+                    "t0 (K)": 1000.0,
+                    "t1 (K)": 1000.0,
+                    "p0 (bar)": 1.01325,
+                    "p1 (bar)": 1.01325,
+                    "dH (kJ/mol)": 69.77646567577311,
+                    "excess dH (kJ/mol)": 0.058361593176273804,
+                    "dS (kJ/mol/K)": 0.1622011873903195,
+                    "excess dS (kJ/mol/K)": 0.00010951572058584155
+                }
+            }
+        },
+        "R-102": {
+            "temperature": "1100 K",
+            "pressure": "1 atm",
+            "conversion": ".8",
+            "inputs": {
+                "EL-101": {
+                    "Mg": 1
+                },
+                "PSA-101": {
+                    "N2": 1
+                }
+            },
+            "limiting_reagent": "Mg",
+            "reaction": {
+                "reagents": {
+                    "Mg": -3,
+                    "N2": -1
+                },
+                "products": {
+                    "Mg3N2": 1
+                }
+            },
+            "flow": {
+                "reagents": {
+                    "Mg": {
+                        "Component Flow (kmol/20-min-batch)": 0.9786622625688001,
+                        "Mass Flow (kg/20-min-batch)": 23.786386291734686
+                    },
+                    "N2": {
+                        "Component Flow (kmol/20-min-batch)": 0.40766483212589993,
+                        "Mass Flow (kg/20-min-batch)": 11.42032260717496
+                    }
+                },
+                "products": {
+                    "Mg3N2": {
+                        "Component Flow (kmol/20-min-batch)": 0.26097660335168,
+                        "Mass Flow (kg/20-min-batch)": 26.34010759968171
+                    },
+                    "Mg": {
+                        "Component Flow (kmol/20-min-batch)": 0.19573245251375998,
+                        "Mass Flow (kg/20-min-batch)": 4.757277258346936
+                    },
+                    "N2": {
+                        "Component Flow (kmol/20-min-batch)": 0.08153296642517997,
+                        "Mass Flow (kg/20-min-batch)": 2.2840645214349915
+                    }
+                }
+            },
+            "source": {},
+            "properties": {
+                "Mg": {
+                    "t0 (K)": 1000.0,
+                    "t1 (K)": 1100.0,
+                    "p0 (bar)": 1.01325,
+                    "p1 (bar)": 1.01325,
+                    "dH (kJ/mol)": 32.300659990449354,
+                    "excess dH (kJ/mol)": 0.0,
+                    "dS (kJ/mol/K)": 0.04658191239620619,
+                    "excess dS (kJ/mol/K)": 0.0
+                },
+                "N2": {
+                    "t0 (K)": 293.0,
+                    "t1 (K)": 1100.0,
+                    "p0 (bar)": 1.01325,
+                    "p1 (bar)": 1.01325,
+                    "dH (kJ/mol)": 0,
+                    "excess dH (kJ/mol)": 0,
+                    "dS (kJ/mol/K)": 0,
+                    "excess dS (kJ/mol/K)": 0
+                }
+            }
+        },
+        "PSA-102": {
+            "temperature": "1000 K",
+            "pressure": "1 atm",
+            "conversion": "1",
+            "inputs": {
+                "R-101": {
+                    "HCl": 1,
+                    "H2O": 1,
+                    "O2": 1
+                }
+            },
+            "seperation": {
+                "reagents": [
+                    "HCl",
+                    "O2",
+                    "H2O"
+                ],
+                "products": [
+                    "HCl"
+                ],
+                "side": [
+                    "O2",
+                    "H2O"
+                ]
+            },
+            "flow": {
+                "reagents": {
+                    "HCl": {
+                        "Component Flow (kmol/20-min-batch)": 3.1317192402201606,
+                        "Mass Flow (kg/20-min-batch)": 114.17622005994663
+                    },
+                    "O2": {
+                        "Component Flow (kmol/20-min-batch)": 0.7829298100550401,
+                        "Mass Flow (kg/20-min-batch)": 25.052188062141177
+                    },
+                    "H2O": {
+                        "Component Flow (kmol/20-min-batch)": 0.39146490502751996,
+                        "Mass Flow (kg/20-min-batch)": 7.052240264070773
+                    }
+                },
+                "products": {
+                    "HCl": {
+                        "Component Flow (kmol/20-min-batch)": 3.1317192402201606,
+                        "Mass Flow (kg/20-min-batch)": 114.17622005994663
+                    }
+                },
+                "side": {
+                    "O2": {
+                        "Component Flow (kmol/20-min-batch)": 0.7829298100550401,
+                        "Mass Flow (kg/20-min-batch)": 25.052188062141177
+                    },
+                    "H2O": {
+                        "Component Flow (kmol/20-min-batch)": 0.39146490502751996,
+                        "Mass Flow (kg/20-min-batch)": 7.052240264070773
+                    }
+                }
+            },
+            "source": {}
+        },
+        "PSA-103": {
+            "temperature": "920 K",
+            "pressure": "1 atm",
+            "conversion": "1",
+            "inputs": {
+                "R-103": {
+                    "HCl": 1,
+                    "NH3": 1
+                }
+            },
+            "seperation": {
+                "reagents": [
+                    "HCl",
+                    "NH3"
+                ],
+                "products": [
+                    "NH3"
+                ],
+                "side": [
+                    "HCl"
+                ]
+            },
+            "flow": {
+                "reagents": {
+                    "HCl": {
+                        "Component Flow (kmol/20-min-batch)": 0.626343848044032,
+                        "Mass Flow (kg/20-min-batch)": 22.83524401198932
+                    },
+                    "NH3": {
+                        "Component Flow (kmol/20-min-batch)": 0.417562565362688,
+                        "Mass Flow (kg/20-min-batch)": 7.111508050691938
+                    }
+                },
+                "side": {
+                    "HCl": {
+                        "Component Flow (kmol/20-min-batch)": 0.626343848044032,
+                        "Mass Flow (kg/20-min-batch)": 22.83524401198932
+                    }
+                },
+                "products": {
+                    "NH3": {
+                        "Component Flow (kmol/20-min-batch)": 0.417562565362688,
+                        "Mass Flow (kg/20-min-batch)": 7.111508050691938
+                    }
+                }
+            },
+            "source": {}
+        },
+        "R-103": {
+            "temperature": "1100 K",
+            "pressure": "1 atm",
+            "conversion": ".8",
+            "inputs": {
+                "R-102": {
+                    "Mg3N2": 1
+                },
+                "PSA-102": {
+                    "HCl": 1
+                }
+            },
+            "recycle": {
+                "PSA-103": {
+                    "HCl": 1
+                }
+            },
+            "limiting_reagent": "Mg3N2",
+            "reaction": {
+                "reagents": {
+                    "Mg3N2": -1,
+                    "HCl": -6
+                },
+                "products": {
+                    "NH3": 2,
+                    "MgCl2": 3
+                }
+            },
+            "flow": {
+                "reagents": {
+                    "Mg3N2": {
+                        "Component Flow (kmol/20-min-batch)": 0.26097660335168,
+                        "Mass Flow (kg/20-min-batch)": 26.34010759968171
+                    },
+                    "HCl": {
+                        "Component Flow (kmol/20-min-batch)": 3.1317192402201606,
+                        "Mass Flow (kg/20-min-batch)": 114.17622005994663
+                    }
+                },
+                "products": {
+                    "NH3": {
+                        "Component Flow (kmol/20-min-batch)": 0.417562565362688,
+                        "Mass Flow (kg/20-min-batch)": 7.111508050691938
+                    },
+                    "MgCl2": {
+                        "Component Flow (kmol/20-min-batch)": 0.6263438480440321,
+                        "Mass Flow (kg/20-min-batch)": 59.631066053032086
+                    },
+                    "Mg3N2": {
+                        "Component Flow (kmol/20-min-batch)": 0.052195320670335985,
+                        "Mass Flow (kg/20-min-batch)": 5.26802151993634
+                    },
+                    "HCl": {
+                        "Component Flow (kmol/20-min-batch)": 0.626343848044032,
+                        "Mass Flow (kg/20-min-batch)": 22.83524401198932
+                    }
+                }
+            },
+            "source": {},
+            "properties": {
+                "Mg3N2": "No properties found",
+                "HCl": {
+                    "t0 (K)": 1000.0,
+                    "t1 (K)": 1100.0,
+                    "p0 (bar)": 1.01325,
+                    "p1 (bar)": 1.01325,
+                    "dH (kJ/mol)": 24.153766770214904,
+                    "excess dH (kJ/mol)": 0.03882431212076835,
+                    "dS (kJ/mol/K)": 0.03895357937580791,
+                    "excess dS (kJ/mol/K)": 8.547815864324813e-05
+                }
+            }
+        }
+    },
+    "Chemical Properties": {
+        "MgCl2": {
+            "CAS": "7786-30-3",
+            "Tb (K)": 1685.15,
+            "Tc (K)": 2754.32,
+            "Tm (K)": 987.15,
+            "MW (g/mol)": 95.21100000000001,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "Mg": {
+            "CAS": "magnesium",
+            "Tb (K)": 1363.15,
+            "Tc (K)": 2241.04,
+            "Tm (K)": 923.15,
+            "MW (g/mol)": 24.305,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "Cl2": {
+            "CAS": "chlorine",
+            "Tb (K)": 239.197637887,
+            "Tc (K)": 416.8654,
+            "Tm (K)": 172.15,
+            "MW (g/mol)": 70.906,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "N2": {
+            "CAS": "nitrogen",
+            "Tb (K)": 77.3549950205,
+            "Tc (K)": 126.192,
+            "Tm (K)": 63.15,
+            "MW (g/mol)": 28.0134,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "H2O": {
+            "CAS": "7732-18-5",
+            "Tb (K)": 373.124295848,
+            "Tc (K)": 647.096,
+            "Tm (K)": 273.15,
+            "MW (g/mol)": 18.01528,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "HCl": {
+            "CAS": "7647-01-0",
+            "Tb (K)": 188.172607605,
+            "Tc (K)": 324.68,
+            "Tm (K)": 203.55,
+            "MW (g/mol)": 36.46094,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "NH3": {
+            "CAS": "7664-41-7",
+            "Tb (K)": 239.83431862,
+            "Tc (K)": 405.56,
+            "Tm (K)": 195.45,
+            "MW (g/mol)": 17.03052,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "Mg3N2": {
+            "No properties found": "A valid CAS number (12057-71-5) was recognized, but is not in the database"
+        },
+        "O2": {
+            "CAS": "oxygen",
+            "Tb (K)": 90.1878078805,
+            "Tc (K)": 154.581,
+            "Tm (K)": 54.36,
+            "MW (g/mol)": 31.9988,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "NH2COONH4": {
+            "CAS": "1111-78-0",
+            "Tb (K)": null,
+            "Tc (K)": 539.82,
+            "Tm (K)": null,
+            "MW (g/mol)": 78.07054000000001,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "NH2CONH2": {
+            "CAS": "57-13-6",
+            "Tb (K)": 626.15,
+            "Tc (K)": 705.0,
+            "Tm (K)": 406.5,
+            "MW (g/mol)": 60.05526,
+            "T_flash (K)": 375.304093548726,
+            "T_flash_source": "Serat DIPPR (2017)"
+        },
+        "CO2": {
+            "CAS": "124-38-9",
+            "Tb (K)": 194.67,
+            "Tc (K)": 304.1282,
+            "Tm (K)": 216.65,
+            "MW (g/mol)": 44.0095,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        },
+        "Ar": {
+            "CAS": "argon",
+            "Tb (K)": 87.3021362362,
+            "Tc (K)": 150.687,
+            "Tm (K)": 83.81,
+            "MW (g/mol)": 39.948,
+            "T_flash (K)": null,
+            "T_flash_source": null
+        }
+    }
+}

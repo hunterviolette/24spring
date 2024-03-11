@@ -1,9 +1,19 @@
 {
-  "Compounds": [
-    "MgCl2", "Mg", "Cl2", "N2", "H2O",
-    "HCl", "NH3", "Mg3N2", "O2", "NH2COONH4",
-    "NH2CONH2", "CO2", "Ar"
-  ],
+  "Compounds": {
+    "MgCl2": "7786-30-3", 
+    "Mg": "magnesium", 
+    "Cl2": "chlorine", 
+    "N2": "nitrogen", 
+    "H2O": "7732-18-5",
+    "HCl": "7647-01-0", 
+    "NH3": "7664-41-7", 
+    "Mg3N2": "12057-71-5", 
+    "O2": "oxygen", 
+    "NH2COONH4": "1111-78-0",
+    "NH2CONH2": "57-13-6", 
+    "CO2": "124-38-9", 
+    "Ar": "argon"
+  },
   "initCompounds": ["MgCl2", "N2", 
       "Ar_air", "CO2_air", "O2_air"
   ],
@@ -25,7 +35,7 @@
   "Units": {
     "EL-101": {
       "temperature": "1000 K",
-      "pressure": "1 bar",
+      "pressure": "1 atm",
       "conversion": ".8",
       "inputs": {
           "R-103": {"MgCl2": 1}
@@ -42,7 +52,7 @@
       },
     "PSA-101": {
       "temperature": "293 K",
-      "pressure": "1 bar",
+      "pressure": "1 atm",
       "conversion": "1",
       "source": {
         "Air": {
@@ -58,7 +68,7 @@
       },
     "R-101": {
         "temperature": "1000 K",
-        "pressure": "1 bar",
+        "pressure": "1 atm",
         "conversion": ".8",
         "inputs": {
             "EL-101": {"Cl2": 1} 
@@ -83,7 +93,7 @@
       },
     "R-102": {
         "temperature": "1100 K",
-        "pressure": "1 bar",
+        "pressure": "1 atm",
         "conversion": ".8",
         "inputs": {
             "EL-101": {"Mg": 1}, 
@@ -102,7 +112,7 @@
       },
     "PSA-102": {
       "temperature": "1000 K",
-      "pressure": "1 bar",
+      "pressure": "1 atm",
       "conversion": "1",
       "inputs": {
           "R-101": {
@@ -153,7 +163,8 @@
             "HCl": -6
           },
           "products": {
-            "NH3": 2
+            "NH3": 2,
+            "MgCl2": 3
           }
         }
     }

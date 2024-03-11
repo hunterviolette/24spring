@@ -1,13 +1,13 @@
-import periodictable
 import pandas as pd
 import pint
 import json 
+import os
 
 from chempy import Substance
 
-if __name__ == "__main__":
+if os.getcwd().split("/")[-1].endswith("src"):
   from unit_registry import UnitConversion
-else:
+else: 
   from src.unit_registry import UnitConversion
 
 '''
@@ -60,14 +60,18 @@ class Air:
 class Balance(UnitConversion): 
   def __init__(self, 
               targetflow: int = 1, # in metric ton per day
-              targetCompound: str = "NH3" 
+              targetCompound: str = "NH3",
+              cfgPath: str = "../cfg.json"
             ) -> None:
     
     super().__init__()
     
     self.targetFlow = self.q(targetflow, 'mtpd')
 
-    with open("./cfg.json", "r") as f: self.c = json.load(f)
+    print(cfgPath)
+    print(os.getcwd())
+
+    with open(cfgPath, "r") as f: self.c = json.load(f)
 
     self.subs = {
       x: Substance.from_formula(x) for x in self.c["Compounds"]}
