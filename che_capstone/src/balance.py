@@ -68,9 +68,6 @@ class Balance(UnitConversion):
     
     self.targetFlow = self.q(targetflow, 'mtpd')
 
-    print(cfgPath)
-    print(os.getcwd())
-
     with open(cfgPath, "r") as f: self.c = json.load(f)
 
     self.subs = {

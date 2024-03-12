@@ -17,7 +17,7 @@ class SinglePass(Balance, Therm):
   def __init__(self, 
               targetFlow: int = 1, # mtpd
               targetCompound: str = "NH3",
-              cfgPath: str = "./cfg.json"
+              cfgPath: str = "../cfg.json"
             ) -> None:
     
     self.cPath = cfgPath
@@ -47,11 +47,14 @@ class SinglePass(Balance, Therm):
         uo.setdefault("source", {})
         
         conv = min(float(uo["conversion"]), 1) if "conversion" in uo else 1
-        if stage == str(0): # init stage 
+
+        # 0 stage
+        if stage == str(0):  
 
           if unit_type == "PSA": uops = uo["seperation"]["reagents"]
           else: uops = list(uo["reaction"]["reagents"].keys())
 
+          # Set flows from material balance for initCompounds
           for comp in [x for x in uops if x in cfg["initCompounds"]]:
             
             row = self.batchFlows.loc[
@@ -63,26 +66,27 @@ class SinglePass(Balance, Therm):
                     self.cols["n"]: row[self.cols["n"]].values[0],
                     self.cols["m"]: row[self.cols["m"]].values[0],
                   }
-                          
-        else: # n stages
+
+        # n stages               
+        else:
           if unit_type != "PSA": p = "reaction"
           else: p = "seperation"
 
+          # Get reagent flows from input Unit Operations
           for comp in uo[p]["reagents"]:
             for input in uo["inputs"]:
               inputuo = cfg["Units"][input]
               if comp in inputuo["flow"]["products"].keys():
                 
-                n = (inputuo["flow"]["products"][comp][self.cols["n"]]
-                     * uo["inputs"][input][comp])
+                n = inputuo["flow"]["products"][comp][self.cols["n"]]
                 m = inputuo["flow"]["products"][comp][self.cols["m"]]
                 
-                row = uo["flow"]["reagents"].get(comp, {})
                 uo["flow"]["reagents"][comp] = {
-                  self.cols["n"]: n + row.get(self.cols["n"], 0),
-                  self.cols["m"]: m + row.get(self.cols["m"], 0)
+                  self.cols["n"]: n,
+                  self.cols["m"]: m
                 }
             
+            # Get reagent flows for sources (water/air)
             for source in uo["source"]:
               if "limiting_reagent" in uo:
                 reag = uo["limiting_reagent"]
@@ -106,11 +110,35 @@ class SinglePass(Balance, Therm):
 
         if unit_type != "PSA":
           if uo["flow"]["reagents"].keys() == uo["reaction"]["reagents"].keys():
-          
+            
+            # Update reagents with recycles from previous state
+            if "recycle" in uo.keys() and itr>0:
+              for iuo in uo["recycle"].keys():
+
+                recy = uo["recycle"][iuo]
+                for comp in recy.keys():
+
+                  with open(f'states/iter_{itr-1}.json', "r") as f: 
+                    re = json.load(f)["Units"][iuo]["flow"]
+
+                  for stream in ["products", "side"]:
+                    if comp in re.get(stream, {}).keys():
+
+                      n = re[stream][comp][self.cols["n"]]
+                      m = re[stream][comp][self.cols["m"]]
+                      
+                      row = uo["flow"]["reagents"].get(comp, {})
+                      
+                      uo["flow"]["reagents"][comp] = {
+                          self.cols["n"]: n + row.get(self.cols["n"], 0),
+                          self.cols["m"]: m + row.get(self.cols["m"], 0)
+                        }
+
             if len(uo["reaction"]["reagents"].keys()) == 1: 
               reagent = next(iter(uo["reaction"]["reagents"]))
             else: reagent = uo["limiting_reagent"]
 
+            # Generate product flows
             for prod in uo["reaction"]["products"].keys():
               
               stoich = (uo["reaction"]["products"][prod] / 
@@ -131,7 +159,8 @@ class SinglePass(Balance, Therm):
                     self.cols["m"]: m.magnitude,
                   }
                 })
-            
+
+            # Add unreacted reagents to product flows
             if conv < 1:
               for reagent in uo["reaction"]["reagents"].keys():
                 rflow = uo["flow"]["reagents"][reagent]
@@ -140,6 +169,7 @@ class SinglePass(Balance, Therm):
                   self.cols["n"]: rflow[self.cols["n"]] * (1 - conv),
                   self.cols["m"]: rflow[self.cols["m"]] * (1 - conv),
                 }
+            
           else:
             e = (set(uo["flow"]["reagents"].keys()) ^ 
                   set(uo["reaction"]["reagents"].keys()))
@@ -192,7 +222,7 @@ class SinglePass(Balance, Therm):
         else: raise Exception(f"Missing reagents {stage} {unit}")
 
         pprint.pprint(f"=== Stage: {stage}, Unit: {unit} ===")
-        pprint.pprint(self.c["Units"][unit])
+        #pprint.pprint(self.c["Units"][unit])
       
       if stage == str(4): break
     
@@ -206,7 +236,7 @@ class SinglePass(Balance, Therm):
     SinglePass.ThermalProperties(self, True)
     
 if __name__ == "__main__":
-  core, feat = False, True
+  core, feat = True, False
   x = SinglePass()
 
   if core: x.IterFlows(True)

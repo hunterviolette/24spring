@@ -69,7 +69,7 @@
     "R-101": {
         "temperature": "1000 K",
         "pressure": "1 atm",
-        "conversion": ".8",
+        "conversion": ".95",
         "inputs": {
             "EL-101": {"Cl2": 1} 
           },
@@ -98,6 +98,9 @@
         "inputs": {
             "EL-101": {"Mg": 1}, 
             "PSA-101": {"N2": 1}
+          },
+        "recycle": {
+          "R-102": {"Mg": 1}
           },
         "limiting_reagent": "Mg",
         "reaction": {
@@ -153,9 +156,10 @@
           "R-102": {"Mg3N2": 1}, 
           "PSA-102": {"HCl": 1}
         },
-      "recycle": {
-        "PSA-103": {"HCl": 1}
-      },
+        "recycle": {
+          "PSA-103": {"HCl": 1},
+          "R-103": {"Mg3N2": 1}
+        },
       "limiting_reagent": "Mg3N2",
       "reaction": {
           "reagents": {

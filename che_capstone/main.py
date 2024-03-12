@@ -1,7 +1,7 @@
 
-from src.core import SinglePass
+from src.steady_state import SteadyState
 
-class Master(SinglePass):
+class Master(SteadyState):
   def __init__(self, 
             targetFlow: int = 1, # mtpd
             targetCompound: str = "NH3",
@@ -16,7 +16,7 @@ class Master(SinglePass):
               cfgPath=cfgPath
             )
     
-    Master.features(self)
+    Master.ssa(self)
 
 
 
