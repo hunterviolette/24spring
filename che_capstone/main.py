@@ -13,7 +13,8 @@ class Master(SteadyState):
     super().__init__(
               targetFlow=targetFlow, 
               targetCompound=targetCompound,
-              cfgPath=cfgPath
+              cfgPath=cfgPath,
+              maxIterations=15
             )
     
     Master.ssa(self)

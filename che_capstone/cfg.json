@@ -40,6 +40,9 @@
       "inputs": {
           "R-103": {"MgCl2": 1}
         },
+      "recycle": {
+          "EL-101": {"MgCl2": 1}
+        },
       "reaction": {
           "reagents": {
             "MgCl2": -1
