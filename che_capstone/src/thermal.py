@@ -25,6 +25,37 @@ class Therm(UnitConversion):
       
       setattr(self, f.split('.')[0], pd.read_csv(f"{dir}/{f}"))
 
+  @staticmethod
+  def HeatX_dH(
+                t1: int = 900, # output temepratrue (K)
+                t0: int = 1000, # input temperature (K) 
+                p1: int = 1E5, # output pressure (Pa)  
+                p0: int = 1E5, # output pressure (Pa) 
+                chems: List[str] = ["ammonia", "7647-01-0"], 
+                zs: List[float] = [.63, .34]
+              ):
+    
+    return ( # J/mol
+        Mixture(chems, zs=zs, T=t1, P=p1).Hm -
+        Mixture(chems, zs=zs, T=t0, P=p0).Hm 
+      )
+
+  @staticmethod
+  def Pump_dU(
+                t1: int = 900, # output temepratrue (K)
+                t0: int = 1000, # input temperature (K) 
+                p1: int = 1E5, # output pressure (Pa)  
+                p0: int = 1E5, # output pressure (Pa) 
+                chems: List[str] = ["ammonia", "7647-01-0"], 
+                zs: List[float] = [.63, .34]
+              ):
+    
+    # dU = -W
+    return (  # J/mol 
+        Mixture(chems, zs=zs, T=t1, P=p1).Um -
+        Mixture(chems, zs=zs, T=t0, P=p0).Um 
+      )
+
   def CheckChemical(self, name):
     try:
       ch = Chemical(name)
