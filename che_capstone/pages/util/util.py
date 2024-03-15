@@ -164,7 +164,7 @@ class Preprocessing:
                           "Iteration": [i],
                           "Stream Type": [key],
                           "Chemical": [chem],
-                          basis: [flows[key][chem][basis]]
+                          basis: [abs(flows[key][chem][basis])]
                         })
               ])
 
@@ -172,9 +172,7 @@ class Preprocessing:
               ['Unit', 'Iteration', 'Stream Type', 'Chemical'], 
               as_index=False).first()
     
-    self.flows= df.astype({
-        "Iteration": int
-      })
+    self.flows= df.astype({"Iteration": int})
 
 
 if __name__ == "__main__":

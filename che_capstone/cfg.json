@@ -14,9 +14,7 @@
     "CO2": "124-38-9", 
     "Ar": "argon"
   },
-  "initCompounds": ["MgCl2", "N2", 
-      "Ar_air", "CO2_air", "O2_air"
-  ],
+  "initCompounds": ["MgCl2"],
   "OverallReaction": {
     "MgCl2": -3,
     "N2": -1,
@@ -37,11 +35,9 @@
       "temperature": "1000 K",
       "pressure": "1 atm",
       "conversion": ".8",
-      "inputs": {
-          "R-103": {"MgCl2": 1}
-        },
       "recycle": {
-          "EL-101": {"MgCl2": 1}
+          "EL-101": {"MgCl2": 1},
+          "R-103": {"MgCl2": 1}
         },
       "reaction": {
           "reagents": {
@@ -63,6 +59,13 @@
           "pressure": "1 atm"
         }
       },
+      "depends_on": {
+        "EL-101": {
+          "dependent compound": "Mg",
+          "compound": "N2",
+          "stoich": 0.333333
+        }
+      },
       "seperation": {
         "reagents": ["N2", "Ar_air", "CO2_air", "O2_air"],
         "products": ["N2"],
@@ -76,6 +79,13 @@
         "inputs": {
             "EL-101": {"Cl2": 1} 
           },
+        "depends_on": {
+          "EL-101": {
+            "dependent compound": "Cl2",
+            "compound": "H2O",
+            "stoich": 1
+          }
+        },
         "source": {
           "H2O": {
             "temperature": "293 K",
@@ -85,12 +95,12 @@
         "limiting_reagent": "Cl2",
         "reaction": {
             "reagents": {
-              "Cl2": -3,
-              "H2O": -3
+              "Cl2": -1,
+              "H2O": -1
             },
             "products": {
-              "O2": 1.5,
-              "HCl": 6
+              "O2": 0.5,
+              "HCl": 2
             }
           }
       },

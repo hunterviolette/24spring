@@ -42,8 +42,8 @@ class UnitFlows(DashUtil, Preprocessing):
         )
     def cb(maxIter):
 
-      cols = ["Component Flow (kmol/20-min-batch)", 
-              "Mass Flow (kg/20-min-batch)"]
+      cols = ["Flow (kmol/20-min-batch)", 
+              "Flow (kg/20-min-batch)"]
 
       UnitFlows.UnitFlows(self)
       df = self.flows
