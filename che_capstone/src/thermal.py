@@ -1,9 +1,9 @@
 import os
 import pandas as pd
-
 import json
 import numpy as np
 
+from typing import List
 from thermo import Chemical, Mixture
 
 if os.getcwd().split("/")[-1].endswith("src"):
