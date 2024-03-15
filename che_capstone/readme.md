@@ -14,4 +14,4 @@
 ![r103](assets/r103.png)
 
 ## Steady State Stream Table
-<iframe src="assets/stream_table_steady_state.html" width="100%" height="500px"></iframe>
+![stream_table](assets/stream_table.png)
