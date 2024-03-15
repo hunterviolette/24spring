@@ -68,7 +68,7 @@ class UnitFlows(DashUtil, Preprocessing):
                   fig.add_trace(go.Scatter(
                       x=chem_data['Iteration'], 
                       y=chem_data[col], 
-                      mode='markers', 
+                      mode='markers+lines', 
                       marker=dict(color=chem_num),
                       name=chem
                   ))

@@ -12,6 +12,7 @@ from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
 from dash import dcc, dash_table, html
 from PIL import Image
+from typing import List
 
 class DashUtil:
 
@@ -105,6 +106,34 @@ class Preprocessing:
 
   def __init__(self) -> None:
     pass
+
+  @staticmethod
+  def Df_To_HTML(df: pd.DataFrame,
+                header: str = "", 
+                name: str = 'mdf'
+              ):
+    
+    style = [
+      dict(selector="th", props=[("background-color", "#154c79"),
+                                  ("color", "white"),
+                                  ("border", "1px solid white"),
+                                  ("text-align", "center"),
+                                  ("font-size", "16px"),
+                                  ("padding", "4px"),
+                                  ("font-weight", "bold")]),
+      dict(selector="td", props=[("background-color", "lightgray"),
+                                  ("color", "black"),
+                                  ("border", "1px solid black"),
+                                  ("text-align", "center"),
+                                  ("font-size", "14px"),
+                                  ("padding", "4px")]),
+    ]
+
+    with open(f'{name}.html', 'w', encoding='utf-8') as file:
+      file.write(f"<h2>{header}</h2>")
+      file.write(df.style.set_table_styles(style
+                                  ).format(precision=4
+                                  ).to_html())
 
   @staticmethod
   def StrTime(asInt: bool = False):

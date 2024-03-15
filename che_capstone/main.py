@@ -8,7 +8,8 @@ class Master(SteadyState, Preprocessing):
   def __init__(self, 
             targetFlow: int = 1, # mtpd
             targetCompound: str = "NH3",
-            cfgPath: str = "./cfg.json"
+            cfgPath: str = "./cfg.json",
+            tables: bool = False
           ) -> None:
     
     print(targetFlow, targetCompound)
@@ -17,35 +18,33 @@ class Master(SteadyState, Preprocessing):
               targetFlow=targetFlow, 
               targetCompound=targetCompound,
               cfgPath=cfgPath,
-              maxIterations=4
+              maxIterations=8
             )
     
     Master.ssa(self)
     
-    Master.UnitFlows(self)
-    df = self.flows
+    if tables: 
+      Master.UnitFlows(self)
+      df = self.flows
 
-    mdf = df.pivot_table(
-                      index=['Unit', 'Iteration'], 
-                      columns='Chemical', 
-                      values='Flow (kmol/20-min-batch)', 
-                      fill_value=0
-                    )
-    mdf.to_csv('iter_flows.csv')
-    
-    df = df.loc[df["Iteration"] == df["Iteration"].max()
-              ].pivot_table(
-                index=['Unit', 'Stream Type'], 
-                columns='Chemical', 
-                values='Flow (kmol/20-min-batch)', 
-                fill_value=0
-              )
-
-    df.to_csv("stream_table.csv")
-
-
-
+      Master.Df_To_HTML(df.pivot_table(
+                          index=['Unit', 'Iteration', "Stream Type"], 
+                          columns='Chemical', 
+                          values='Flow (kmol/20-min-batch)', 
+                          fill_value=0
+                          ), 
+          header="Input and output flows for unit operations (kmol/20-min-batch) per iteration",
+                        name="./assets/stream_iteration_table")
+      
+      Master.Df_To_HTML(df.loc[df["Iteration"] == df["Iteration"].max()
+                            ].pivot_table(
+                              index=['Unit', 'Stream Type'], 
+                              columns='Chemical', 
+                              values='Flow (kmol/20-min-batch)', 
+                              fill_value=""
+                          ), 
+          header="Input and output flows for unit operations (kmol/20-min-batch) at steady state",
+                        name="./assets/stream_table_steady_state")
 
 if __name__ == "__main__":
-  Master()
-  #df = pd.read_csv('flows.csv').set_index(["Iteration", "Unit"])
+  Master(tables=True)

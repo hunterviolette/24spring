@@ -39,9 +39,6 @@ class SinglePass(Balance, Therm):
           "m": "Flow (kg/20-min-batch)"
         }
     
-    '''for col in self.cols.values():
-      self.batchFlows[col] = self.batchFlows[col]
-    '''
   def __cfg__(self):
     # Need to open fresh config or previous state carries over
     with open(self.cPath, "r") as f: self.c = json.load(f)
@@ -57,17 +54,17 @@ class SinglePass(Balance, Therm):
       # For each unit in each stage 
       for unit in cfg["Stages"][stage]:
         pprint.pprint(f"=== Init Stage: {stage}, Unit: {unit}, Iteration: {itr} ===")
-        unit_type = unit.split('-')[0]
 
         uo = cfg["Units"][unit]
         uo.setdefault("flow", {}).setdefault("reagents", {})
         uo.setdefault("flow", {}).setdefault("products", {})
+        uo.setdefault("flow", {}).setdefault("side", {})
         uo.setdefault("source", {})
         uo.setdefault("depends_on", {})
         
         conv = min(float(uo["conversion"]), 1) if "conversion" in uo else 1
 
-        # Sources that are flow rate dependent
+        # variable flow rate dependent sources  
         for dep in uo["depends_on"].keys():
 
           row = uo["depends_on"][dep]
@@ -102,11 +99,10 @@ class SinglePass(Balance, Therm):
                     self.cols["m"]: m.magnitude,
                   }
 
-
         # 0 stage, get initial reagent flows on Basis Compound/flow   
         if stage == str(0) and itr == 0:  
           
-          if unit_type == "PSA": uops = uo["seperation"]["reagents"]
+          if "PSA" in unit: uops = uo["seperation"]["reagents"]
           else: uops = list(uo["reaction"]["reagents"].keys())
 
           # Set flows from material balance for initCompounds
@@ -116,9 +112,13 @@ class SinglePass(Balance, Therm):
               (self.batchFlows["Component"] == comp) & 
               (self.batchFlows[self.cols["m"]] < 0)
               ]
-          
-            n = float(row[self.cols["n"]].values[0])
-            m = float(row[self.cols["m"]].values[0])
+
+            if comp in cfg["Units"][unit].get("excess", {}).keys(): 
+              excess = cfg["Units"][unit]["excess"][comp]
+            else: excess = 1    
+
+            n = abs(float(row[self.cols["n"]].values[0])) * excess
+            m = abs(float(row[self.cols["m"]].values[0])) * excess
             
             print(" ".join([
                 f"getting flows from OMB for {comp},",
@@ -126,13 +126,13 @@ class SinglePass(Balance, Therm):
               ]))
             
             uo["flow"]["reagents"][comp] = {
-                    self.cols["n"]: abs(n),
-                    self.cols["m"]: abs(m),
+                    self.cols["n"]: n,
+                    self.cols["m"]: m,
                   }
 
         # n>0 and itr>0 stages, get reagent flows from input unit               
         else:
-          if unit_type != "PSA": p = "reaction"
+          if not "PSA" in unit: p = "reaction"
           else: p = "seperation"
 
           # Get reagent flows from input Unit Operations
@@ -154,38 +154,38 @@ class SinglePass(Balance, Therm):
                   self.cols["m"]: m
                 }
 
-            # Update reagents with recycles from previous state
-            if "recycle" in uo.keys() and itr>0:
-              for iuo in uo["recycle"].keys():
+          # Update reagents with recycles from previous state
+          if "recycle" in uo.keys() and itr>0:
+            for iuo in uo["recycle"].keys():
 
-                recy = uo["recycle"][iuo]
-                for comp in recy.keys():
+              recy = uo["recycle"][iuo]
+              for comp in recy.keys():
 
-                  with open(f'states/iter_{itr-1}.json', "r") as f: 
-                    re = json.load(f)["Units"][iuo]["flow"]
+                with open(f'states/iter_{itr-1}.json', "r") as f: 
+                  re = json.load(f)["Units"][iuo]["flow"]
 
-                  for stream in ["products", "side"]:
-                    if comp in re.get(stream, {}).keys():
+                for stream in ["products", "side"]:
+                  if comp in re[stream].keys():
 
-                      n = re[stream][comp][self.cols["n"]]
-                      m = re[stream][comp][self.cols["m"]]
+                    n = re[stream][comp][self.cols["n"]]
+                    m = re[stream][comp][self.cols["m"]]
 
-                      print(" ".join([
-                        f"getting recycle flows from {iuo} for {comp},",
-                        f"from {stream} got {n:.2f} {self.cols['n']}",
-                      ]))
-                      
-                      currentFlow = uo["flow"]["reagents"].get(comp, {}).get(self.cols["n"], 0)
-                      if currentFlow > 0:
-                        print(f'Added recycle flow and current flow {currentFlow:.2f}')
-                      
-                      uo["flow"]["reagents"][comp] = {
-                          self.cols["n"]: n + currentFlow,
-                          self.cols["m"]: m + currentFlow
-                        }
-        
+                    print(" ".join([
+                      f"getting recycle flows from {iuo} for {comp},",
+                      f"from {stream} got {n:.2f} {self.cols['n']}",
+                    ]))
+                    
+                    currentFlow = uo["flow"]["reagents"].get(comp, {}).get(self.cols["n"], 0)
+                    if currentFlow > 0:
+                      print(f'New reagent flow for {comp}: {n+currentFlow:.2f}')
+                    
+                    uo["flow"]["reagents"][comp] = {
+                        self.cols["n"]: n + currentFlow,
+                        self.cols["m"]: m + currentFlow
+                      }
+                            
         # Do reaction
-        if unit_type != "PSA":
+        if not "PSA" in unit:
           if uo["flow"]["reagents"].keys() == uo["reaction"]["reagents"].keys():
 
             if len(uo["reaction"]["reagents"].keys()) == 1: 
@@ -228,7 +228,7 @@ class SinglePass(Balance, Therm):
             raise Exception(f"reaction reagents not found for {unit}, missing: {e}")
         
         # Do seperation
-        elif unit_type == "PSA":
+        elif "PSA" in unit:
           output = uo["seperation"]["side"] + uo["seperation"]["products"]
           if set(list(uo["flow"]["reagents"].keys())) == set(output):
             for reagent in uo["seperation"]["reagents"]:

@@ -35,6 +35,9 @@
       "temperature": "1000 K",
       "pressure": "1 atm",
       "conversion": ".8",
+      "excess": {
+        "MgCl2": 1.8
+      },
       "recycle": {
           "EL-101": {"MgCl2": 1},
           "R-103": {"MgCl2": 1}
@@ -170,7 +173,6 @@
           "PSA-102": {"HCl": 1}
         },
         "recycle": {
-          "PSA-103": {"HCl": 1},
           "R-103": {"Mg3N2": 1}
         },
       "limiting_reagent": "Mg3N2",
