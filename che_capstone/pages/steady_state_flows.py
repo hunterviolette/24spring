@@ -42,8 +42,8 @@ class UnitFlows(DashUtil, Preprocessing):
         )
     def cb(maxIter):
 
-      cols = ["Component Flow (kmol/20-min-batch)", 
-              "Mass Flow (kg/20-min-batch)"]
+      cols = ["Flow (kmol/20-min-batch)", 
+              "Flow (kg/20-min-batch)"]
 
       UnitFlows.UnitFlows(self)
       df = self.flows
@@ -68,7 +68,7 @@ class UnitFlows(DashUtil, Preprocessing):
                   fig.add_trace(go.Scatter(
                       x=chem_data['Iteration'], 
                       y=chem_data[col], 
-                      mode='markers', 
+                      mode='markers+lines', 
                       marker=dict(color=chem_num),
                       name=chem
                   ))

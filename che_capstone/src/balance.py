@@ -39,7 +39,16 @@ class Air:
   CompList = ["O2", "Ar", "CO2"]
 
   @staticmethod
-  def MassPercent(comp, retfrac:bool=False):
+  def AirFrac():
+    return {
+        "N2": Air.n2frac,
+        "O2_air": Air.o2frac,
+        "Ar_air": Air.arfrac,
+        "CO2_air": Air.co2frac
+      }
+
+  @staticmethod
+  def MassPercent(comp: str = "N2", retfrac:bool=False):
     if comp in ["N2", "O2", "Ar", "CO2"]:
       uReg = pint.UnitRegistry(autoconvert_offset_to_baseunit = True)
       q = uReg.Quantity
