@@ -9,7 +9,8 @@ class Master(SteadyState, Preprocessing):
             targetFlow: int = 1, # mtpd
             targetCompound: str = "NH3",
             cfgPath: str = "./cfg.json",
-            tables: bool = False
+            tables: bool = False,
+            maxIterations: int = 8
           ) -> None:
     
     print(targetFlow, targetCompound)
@@ -18,10 +19,10 @@ class Master(SteadyState, Preprocessing):
               targetFlow=targetFlow, 
               targetCompound=targetCompound,
               cfgPath=cfgPath,
-              maxIterations=8
+              maxIterations=maxIterations
             )
     
-    Master.ssa(self)
+    Master.SSA(self)
     
     if tables: 
       Master.UnitFlows(self)

@@ -23,10 +23,10 @@ class SteadyState(SinglePass):
               cfgPath=cfgPath
             )
     
-  def ssa(self):
+  def SSA(self):
     
     for iter in range(self.maxIter):
-      SteadyState.IterFlows(self, True, iter)
+      SteadyState.FlowFeatures(self, iter)
 
 if __name__ == "__main__":
   SteadyState().ssa()

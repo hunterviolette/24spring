@@ -281,10 +281,10 @@ class SinglePass(Balance, Therm):
       with open(f'states/iter_{itr}.json', 'w') as js:
         json.dump(self.c, js, indent=4)
 
-  def features(self):
-    SinglePass.IterFlows(self, False)
+  def FlowFeatures(self, itr):
+    SinglePass.IterFlows(self, False, itr)
 
-    SinglePass.ThermalProperties(self, True)
+    SinglePass.ThermalProperties(self, True, itr)
     
 if __name__ == "__main__":
   core, feat = True, False
