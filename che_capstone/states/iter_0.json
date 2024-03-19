@@ -68,7 +68,8 @@
                     "Cl2": 1,
                     "Mg": 1
                 },
-                "heat of reaction (kJ/mol)": 89.50663184355831
+                "heat of reaction (kJ/mol)": 89.50663184355831,
+                "reaction duty (kJ/20-min-batch)": 157674.17310287288
             },
             "flow": {
                 "reagents": {
@@ -198,7 +199,8 @@
                     "O2": 0.5,
                     "HCl": 2
                 },
-                "heat of reaction (kJ/mol)": -4.747398583927661
+                "heat of reaction (kJ/mol)": -4.747398583927661,
+                "reaction duty (kJ/20-min-batch)": -7944.830725480981
             },
             "flow": {
                 "reagents": {
@@ -258,7 +260,8 @@
                 "products": {
                     "Mg3N2": 1
                 },
-                "heat of reaction (kJ/mol)": -233.9336467186785
+                "heat of reaction (kJ/mol)": -233.9336467186785,
+                "reaction duty (kJ/20-min-batch)": -329676.52606368804
             },
             "flow": {
                 "reagents": {
@@ -426,7 +429,8 @@
                     "NH3": 2,
                     "MgCl2": 3
                 },
-                "heat of reaction (kJ/mol)": 317.64271412798144
+                "heat of reaction (kJ/mol)": 317.64271412798144,
+                "reaction duty (kJ/20-min-batch)": 119372.13592204219
             },
             "flow": {
                 "reagents": {

@@ -8,3 +8,4 @@ bmb_capstone/vol/sample/vsi_data/*
 bmb_capstone/vol/models/*/
 che_capstone/src/tmp/*
 che_capstone/states/*
+che_capstone/src/*.json
