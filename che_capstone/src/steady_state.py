@@ -17,7 +17,7 @@ class SteadyState(SinglePass):
     print(targetFlow, targetCompound)
     self.maxIter = maxIterations
 
-    super().__init__(
+    SinglePass.__init__(self,
               targetFlow=targetFlow, 
               targetCompound=targetCompound,
               cfgPath=cfgPath

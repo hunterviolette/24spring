@@ -67,7 +67,8 @@
                 "products": {
                     "Cl2": 1,
                     "Mg": 1
-                }
+                },
+                "heat of reaction (kJ/mol)": 89.50663184355831
             },
             "flow": {
                 "reagents": {
@@ -196,7 +197,8 @@
                 "products": {
                     "O2": 0.5,
                     "HCl": 2
-                }
+                },
+                "heat of reaction (kJ/mol)": -4.747398583927661
             },
             "flow": {
                 "reagents": {
@@ -255,7 +257,8 @@
                 },
                 "products": {
                     "Mg3N2": 1
-                }
+                },
+                "heat of reaction (kJ/mol)": -233.9336467186785
             },
             "flow": {
                 "reagents": {
@@ -422,7 +425,8 @@
                 "products": {
                     "NH3": 2,
                     "MgCl2": 3
-                }
+                },
+                "heat of reaction (kJ/mol)": 317.64271412798144
             },
             "flow": {
                 "reagents": {

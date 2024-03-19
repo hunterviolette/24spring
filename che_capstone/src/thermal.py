@@ -13,7 +13,7 @@ else:
 
 class Therm(UnitConversion):
 
-  def __init__(self, cfgPath: str = "./cfg.json") -> None:
+  def __init__(self, cfgPath: str = "./iter_7.json") -> None:
     super().__init__()
 
     with open(cfgPath, "r") as f: self.c = json.load(f)
@@ -31,8 +31,10 @@ class Therm(UnitConversion):
               t0: int = 1000, # input temperature (K) 
               p1: int = 1E5, # output pressure (Pa)  
               p0: int = 1E5, # output pressure (Pa) 
-              chems: List[str] = ["ammonia", "7647-01-0"], 
-              zs: List[float] = [.63, .34],
+              chem1: List[str] = ["ammonia", "7647-01-0"], 
+              chem0: List[str] = ["ammonia", "7647-01-0"], 
+              z0: List[float] = [.63, .34],
+              z1: List[float] = [.63, .34],
               prop: str = 'Hm'# Um 
             ):
     """
@@ -55,11 +57,12 @@ class Therm(UnitConversion):
       Returns: Change in molar internal energy of mixture between two states in J/mol
     """
     return ( # J/mol
-        Mixture(chems, zs=zs, T=t1, P=p1).__getattribute__(prop) -
-        Mixture(chems, zs=zs, T=t0, P=p0).__getattribute__(prop)
+        Mixture(chem1, zs=z1, T=t1, P=p1).__getattribute__(prop) -
+        Mixture(chem0, zs=z0, T=t0, P=p0).__getattribute__(prop)
       )
 
-  def CheckChemical(self, name):
+  @staticmethod
+  def CheckChemical(name):
     try:
       ch = Chemical(name)
       return True
@@ -180,6 +183,86 @@ class Therm(UnitConversion):
       with open(f'states/iter_{itr}.json', 'w') as j:
         json.dump(cfg, j, indent=4)
 
+  def HeatRxn(self, col: str = "Flow (kmol/20-min-batch)"):
+    cfg = self.c
+
+    for unit in [x for x in cfg["Units"].keys()
+                if x.split("-")[0] in ["R", "EL"]]:
+      
+      uo = cfg["Units"][unit]
+
+      rxn = {}
+      for side in ["reagents", "products"]:
+        comps, molFracs, manComps = [], [], []
+        for reagent in uo["reaction"][side].keys():
+          inDB = Therm.CheckChemical(cfg["Compounds"][reagent])
+          if inDB:
+            comps.append(cfg["Compounds"][reagent])
+            
+            molFracs.append(uo["flow"][side][reagent][col] / 
+                              sum(uo["flow"][side][key]["Flow (kmol/20-min-batch)"] 
+                                  for key in uo["flow"][side].keys()
+                                  if key in uo["reaction"][side]
+                                  and inDB
+                                ))
+            
+          else: manComps.append(reagent)
+        
+        rxn[side] = {"Compounds": comps, "Mole Fractions": molFracs}
+      
+      temp, pres = uo["temperature"].split(" "), uo["pressure"].split(" ")
+
+      t = self.q(float(temp[0]), temp[1]).to("degK").magnitude
+      p = self.q(float(pres[0]), pres[1]).to("Pa").magnitude
+
+      if unit == "R-102" and "Mg3N2" in uo["reaction"]["products"].keys():
+        # 3 Mg + N2 -> Mg3N2
+        prods = self.q(-461.9, 'kJ/mol') # at 923 K
+
+        reags = self.q(Mixture(
+                          IDs=rxn["reagents"]["Compounds"], 
+                          zs=rxn["reagents"]["Mole Fractions"],
+                          T=t, P=p
+                        ).__getattribute__("Hm"),'J/mol').to('kJ/mol')
+        
+        heatOfRxn = (prods - reags).magnitude
+
+      elif unit == "R-103" and "Mg3N2" in uo["reaction"]["reagents"].keys():
+        # Mg3N2 + 6 HCl -> 3 MgCl2 + 2 NH3
+        mg3n2 = self.q(-461.9, 'kJ/mol') # at 923 K
+
+        reags = self.q(Mixture(
+                          IDs=rxn["reagents"]["Compounds"], 
+                          zs=rxn["reagents"]["Mole Fractions"],
+                          T=t, P=p
+                        ).__getattribute__("Hm"),'J/mol').to('kJ/mol') + mg3n2
+        
+        prods = self.q(Mixture(
+                          IDs=rxn["products"]["Compounds"], 
+                          zs=rxn["products"]["Mole Fractions"],
+                          T=t, P=p
+                        ).__getattribute__("Hm"),'J/mol').to('kJ/mol')
+        
+        heatOfRxn = (prods - reags).magnitude
+        
+      elif not any(rxn["reagents"]["Compounds"]) or not any(rxn["reagents"]["Mole Fractions"]) or \
+          not any(rxn["products"]["Compounds"]) or not any(rxn["products"]["Mole Fractions"]):
+            
+            heatOfRxn = "Missing property data"
+      else:
+        heatOfRxn = self.q(Therm.DeltaMixProperty(
+                      t1=t,
+                      t0=t,
+                      p1=p,
+                      p0=p,
+                      chem1=rxn["products"]["Compounds"],
+                      chem0=rxn["reagents"]["Compounds"],
+                      z1=rxn["products"]["Mole Fractions"],
+                      z0=rxn["reagents"]["Mole Fractions"],
+                    ), "J/mol").to("kJ/mol").magnitude
+        
+      uo["reaction"]["heat of reaction (kJ/mol)"] = heatOfRxn
+
 if __name__ == "__main__":
-  x = Therm().ThermalProperties()
+  x = Therm().HeatRxn()
   

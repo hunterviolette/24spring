@@ -15,7 +15,7 @@ class Master(SteadyState, Preprocessing):
     
     print(targetFlow, targetCompound)
 
-    super().__init__(
+    SteadyState.__init__(self,
               targetFlow=targetFlow, 
               targetCompound=targetCompound,
               cfgPath=cfgPath,

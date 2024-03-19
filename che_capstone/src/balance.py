@@ -73,7 +73,7 @@ class Balance(UnitConversion):
               cfgPath: str = "../cfg.json"
             ) -> None:
     
-    super().__init__()
+    UnitConversion.__init__(self)
     
     self.targetFlow = self.q(targetflow, 'mtpd')
 
