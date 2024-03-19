@@ -263,6 +263,31 @@ class Therm(UnitConversion):
         
       uo["reaction"]["heat of reaction (kJ/mol)"] = heatOfRxn
 
+  def RxnQ(self, col: str = "Flow (kmol/20-min-batch)"):
+    Therm.HeatRxn(self, col)
+    cfg = self.c
+
+    for unit in [x for x in cfg["Units"].keys()
+                if x.split("-")[0] in ["R", "EL"]]:
+      
+      uo = cfg["Units"][unit]
+
+      if len(uo["reaction"]["reagents"].keys()) == 1: 
+              reagent = next(iter(uo["reaction"]["reagents"]))
+      else: reagent = uo["limiting_reagent"]
+
+      conv = float(uo["conversion"])
+      if conv >1: conv = 1
+      
+      n = self.q(uo["flow"]["reagents"][reagent][col], 'kmol/batch')
+      heatRxn = self.q(uo["reaction"]["heat of reaction (kJ/mol)"], 'kJ/mol')
+
+      uo["reaction"]["reaction duty (kJ/20-min-batch)"] = (
+        (conv * n * heatRxn).to('kJ/batch').magnitude
+      )
+      
+      
+
 if __name__ == "__main__":
-  x = Therm().HeatRxn()
+  x = Therm().RxnQ()
   
