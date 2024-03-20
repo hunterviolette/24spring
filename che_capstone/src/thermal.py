@@ -183,32 +183,42 @@ class Therm(UnitConversion):
       with open(f'states/iter_{itr}.json', 'w') as j:
         json.dump(cfg, j, indent=4)
 
-  def HeatRxn(self, col: str = "Flow (kmol/20-min-batch)"):
+  @staticmethod
+  def ReactionDict(uo: dict, cfg: dict, col: str = "Flow (kmol/20-min-batch)"):
+    rxn = {}
+    for side in ["reagents", "products"]:
+      comps, molFracs, name = [], [], []
+      for reagent in uo["reaction"][side].keys():
+        inDB = Therm.CheckChemical(cfg["Compounds"][reagent])
+        if inDB:
+          comps.append(cfg["Compounds"][reagent])
+          
+          molFracs.append(uo["flow"][side][reagent][col] / 
+                            sum(uo["flow"][side][key]["Flow (kmol/20-min-batch)"] 
+                                for key in uo["flow"][side].keys()
+                                if key in uo["reaction"][side]
+                                and inDB
+                              ))
+          name.append(reagent)
+          
+        else: rxn.setdefault("Missing data", {}).update({reagent: side})
+      
+      rxn[side] = {
+              "Compounds": comps, 
+              "Mole Fractions": molFracs,
+              "Name": name
+            }
+      
+    return rxn
+
+  def dH_Mixture(self, col: str = "Flow (kmol/20-min-batch)"):
     cfg = self.c
 
     for unit in [x for x in cfg["Units"].keys()
                 if x.split("-")[0] in ["R", "EL"]]:
       
       uo = cfg["Units"][unit]
-
-      rxn = {}
-      for side in ["reagents", "products"]:
-        comps, molFracs, manComps = [], [], []
-        for reagent in uo["reaction"][side].keys():
-          inDB = Therm.CheckChemical(cfg["Compounds"][reagent])
-          if inDB:
-            comps.append(cfg["Compounds"][reagent])
-            
-            molFracs.append(uo["flow"][side][reagent][col] / 
-                              sum(uo["flow"][side][key]["Flow (kmol/20-min-batch)"] 
-                                  for key in uo["flow"][side].keys()
-                                  if key in uo["reaction"][side]
-                                  and inDB
-                                ))
-            
-          else: manComps.append(reagent)
-        
-        rxn[side] = {"Compounds": comps, "Mole Fractions": molFracs}
+      rxn = Therm.ReactionDict(uo, cfg)
       
       temp, pres = uo["temperature"].split(" "), uo["pressure"].split(" ")
 
@@ -263,8 +273,8 @@ class Therm(UnitConversion):
         
       uo["reaction"]["heat of reaction (kJ/mol)"] = heatOfRxn
 
-  def RxnQ(self, col: str = "Flow (kmol/20-min-batch)"):
-    Therm.HeatRxn(self, col)
+  def Q_Mixture(self, col: str = "Flow (kmol/20-min-batch)"):
+    Therm.dH_Mixture(self, col)
     cfg = self.c
 
     for unit in [x for x in cfg["Units"].keys()
@@ -285,9 +295,69 @@ class Therm(UnitConversion):
       uo["reaction"]["reaction duty (kJ/20-min-batch)"] = (
         (conv * n * heatRxn).to('kJ/batch').magnitude
       )
+  
+  def HeatRxn(self):
+    Therm.__thermdata__(self, './src/data')
+    cfg = self.c
+
+    for unit in [x for x in cfg["Units"].keys()
+                if x.split("-")[0] in ["R", "EL"]]:
       
+      uo = cfg["Units"][unit]
+      rxn = Therm.ReactionDict(uo, cfg)
       
+      temp, pres = uo["temperature"].split(" "), uo["pressure"].split(" ")
+
+      t = self.q(float(temp[0]), temp[1]).to("degK").magnitude
+      p = self.q(float(pres[0]), pres[1]).to("Pa").magnitude
+
+      prods, reags = 0, 0
+      for side in ["products", "reagents"]:
+        for i, comp in enumerate(rxn[side]["Compounds"]):
+          hfm = self.q(Chemical(ID=comp, T=t, P=p
+                            ).Hfm, 'J/mol').to('kJ/mol')
+          
+          stoich = abs(uo["reaction"][side][rxn[side]["Name"][i]])
+
+          if side == "reagents": reags += hfm * stoich
+          else: prods += hfm * stoich
+
+      for comp in rxn.setdefault("Missing data", {}).keys():
+        stoich = abs(uo["reaction"][rxn["Missing data"][comp]][comp])
+        
+        hfm = self.q(Therm.EnthalpyFormation(
+          self.formations.loc[self.formations["Component"] == comp],
+          t
+        ), 'kJ/mol')
+          
+        if rxn["Missing data"][comp] == "products": prods += hfm * stoich
+        else: reags += hfm * stoich
+
+      if not isinstance(prods, int) and not isinstance(reags, int):
+
+        heatRxn = (prods - reags).to("kJ/mol")
+        uo["reaction"]["heat of reaction (kJ/mol)"] = {
+                            "overall": heatRxn.magnitude,
+                            "products": prods.magnitude,
+                            "reagents": reags.magnitude
+                          }
+      else: uo["reaction"]["heat of reaction (kJ/mol)"] = {
+                            "Property Data": "Missing"
+                          }
+  
+  @staticmethod
+  def EnthalpyFormation(d, t):
+    '''
+    Only for solids, used for Mg3N2
+    '''
+    return (
+      d["A"].values[0] + 
+      d["B"].values[0] * t + 
+      d["C"].values[0] * t**2 + 
+      d["D"].values[0] * t**3 +
+      d["E"].values[0] * t**4
+    )
 
 if __name__ == "__main__":
-  x = Therm().RxnQ()
+  x = Therm().HeatRxn()
   
