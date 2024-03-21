@@ -1,25 +1,20 @@
 import pandas as pd
 import plotly_express as px
-from math import log2
+import numpy as np
 
-cost = 3200000
-prodX = 100000
+cost = 100
+prodX = 170000000 # Worlds supply of Ammonia per year
 
-df = pd.DataFrame()
-for x in range(1, prodX, 1):
-  if x == 1: kn = cost
-  else: kn = cost * x**log2(.8)
+modules = np.arange(1, prodX + 1)
+costs = np.where(modules == 1, cost, cost * modules ** np.log2(0.8))
 
-  df = pd.concat([df, 
-          pd.DataFrame({
-              "Module": [x],
-              "Cost": [kn]
-            })
-        ])
+df = pd.DataFrame({"Modules": modules, "Cost": costs})
 
 df["Total Cost"] = df["Cost"].cumsum()
+df["Cost Scale"] = df["Total Cost"] / df["Total Cost"].min()
+df["Free Money Scalar"] = df["Modules"] / df["Cost Scale"]
 
-costX = df["Total Cost"].max() / df["Total Cost"].min()
+df = df.iloc[::len(df) // 1000]
 
-print(prodX / costX, prodX, costX, sep='\n')
-#px.line(df, x="Module", y="Total Cost").show()
+print(df)
+px.line(df, x="Modules", y="Free Money Scalar").show()
