@@ -227,7 +227,8 @@ class Therm(UnitConversion):
 
       if unit == "R-102" and "Mg3N2" in uo["reaction"]["products"].keys():
         # 3 Mg + N2 -> Mg3N2
-        prods = self.q(-461.9, 'kJ/mol') # at 923 K
+        cp = self.q(np.interp(1000, [300, 700], [.1046, .1168]), 'kJ/(mol*degK)')
+        prods = (cp * self.q(100, 'degK')).to('kJ/mol')
 
         reags = self.q(Mixture(
                           IDs=rxn["reagents"]["Compounds"], 
@@ -235,11 +236,12 @@ class Therm(UnitConversion):
                           T=t, P=p
                         ).__getattribute__("Hm"),'J/mol').to('kJ/mol')
         
-        heatOfRxn = (prods - reags).magnitude
+        dH = (prods - reags).magnitude
 
       elif unit == "R-103" and "Mg3N2" in uo["reaction"]["reagents"].keys():
         # Mg3N2 + 6 HCl -> 3 MgCl2 + 2 NH3
-        mg3n2 = self.q(-461.9, 'kJ/mol') # at 923 K
+        cp = self.q(np.interp(1100, [300, 700], [.1046, .1168]), 'kJ/(mol*degK)')
+        mg3n2 = (cp * self.q(-100, 'degK')).to('kJ/mol')
 
         reags = self.q(Mixture(
                           IDs=rxn["reagents"]["Compounds"], 
@@ -253,14 +255,16 @@ class Therm(UnitConversion):
                           T=t, P=p
                         ).__getattribute__("Hm"),'J/mol').to('kJ/mol')
         
-        heatOfRxn = (prods - reags).magnitude
+        dH = (prods - reags).magnitude
         
       elif not any(rxn["reagents"]["Compounds"]) or not any(rxn["reagents"]["Mole Fractions"]) or \
           not any(rxn["products"]["Compounds"]) or not any(rxn["products"]["Mole Fractions"]):
             
-            heatOfRxn = "Missing property data"
+            dH = "Missing property data"
+            prods = self.q(1, 'Pa')
+            reags = self.q(1, 'Pa')
       else:
-        heatOfRxn = self.q(Therm.DeltaMixProperty(
+        dH = self.q(Therm.DeltaMixProperty(
                       t1=t,
                       t0=t,
                       p1=p,
@@ -271,7 +275,9 @@ class Therm(UnitConversion):
                       z0=rxn["reagents"]["Mole Fractions"],
                     ), "J/mol").to("kJ/mol").magnitude
         
-      uo["reaction"]["heat of reaction (kJ/mol)"] = heatOfRxn
+      uo["reaction"]["H mixtures (kJ/mol)"] = {
+            "overall": dH
+        }
 
   def Q_Mixture(self, col: str = "Flow (kmol/20-min-batch)"):
     Therm.dH_Mixture(self, col)
@@ -358,6 +364,67 @@ class Therm(UnitConversion):
       d["E"].values[0] * t**4
     )
 
+  def init_EL101_Q(self):
+    chem = "7786-30-3"
+    h0 = Chemical(
+              ID=chem, 
+              T=self.q(25, 'degC').to('degK').magnitude,
+              P=self.q(1, 'atm').to('Pa').magnitude
+            ).Hm
+    
+    h1 = Chemical(
+              ID=chem, 
+              T=self.q(1000, 'degK').magnitude,
+              P=self.q(1, 'atm').to('Pa').magnitude
+            ).Hm
+    
+    dH = self.q(h1 - h0, 'J/mol').to('kJ/mol')
+    n = self.q(2.2019900907798, 'kmol')
+
+    q = (dH * n / self.q(20, 'min')).to('kW')
+
+    print(f"Initial MgCl2 Q (kJ/mol): {dH}",
+          f"Power (kW): {q}", sep='\n',)
+
+  def R102_Q(self):
+    chem = "magnesium"
+    h0 = Chemical(
+              ID=chem, 
+              T=self.q(1000, 'degK').magnitude,
+              P=self.q(1, 'atm').to('Pa').magnitude
+            ).Hm
+    
+    h1 = Chemical(
+              ID=chem, 
+              T=self.q(1100, 'degK').magnitude,
+              P=self.q(1, 'atm').to('Pa').magnitude
+            ).Hm
+    
+    dH_mg = self.q(h1 - h0, 'J/mol').to('kJ/mol')
+
+    chem = "nitrogen"
+    h0 = Chemical(
+              ID=chem, 
+              T=self.q(25, 'degC').to('degK').magnitude,
+              P=self.q(1, 'atm').to('Pa').magnitude
+            ).Hm
+    
+    h1 = Chemical(
+              ID=chem, 
+              T=self.q(1100, 'degK').magnitude,
+              P=self.q(1, 'atm').to('Pa').magnitude
+            ).Hm
+    
+    dH_n2 = self.q(h1 - h0, 'J/mol').to('kJ/mol')
+    
+    print(
+        f"Magnesium dH (kJ/mol): {dH_mg}",
+        f"Nitrogen dH (kJ/mol): {dH_n2}",
+        sep='\n'
+      )
+
 if __name__ == "__main__":
-  x = Therm().HeatRxn()
+  x = Therm()
+  x.init_EL101_Q()
+  x.R102_Q()
   

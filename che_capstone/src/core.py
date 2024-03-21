@@ -283,6 +283,7 @@ class SinglePass(Balance, Therm):
 
   def FlowFeatures(self, itr):
     SinglePass.IterFlows(self, False, itr)
+    SinglePass.dH_Mixture(self)
     SinglePass.HeatRxn(self)
 
     with open(f'states/iter_{itr}.json', 'w') as js:
