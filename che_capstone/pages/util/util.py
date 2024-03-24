@@ -7,6 +7,7 @@ import re
 import json
 import io
 import base64
+from time import time
 
 from tifffile import imread, imwrite
 from skimage.io import imread as pngRead
@@ -166,7 +167,6 @@ class Preprocessing:
       mdf = pd.concat([mdf, df.rename(columns={"Unamed: 0": "Unit"})], axis=0)
 
     self.unitdf = mdf.reset_index()
-    print(self.unitdf, self.unitdf.dtypes, sep='\n')
 
   def UnitFlows(self):
     Preprocessing.JSON_to_Pandas(self)
@@ -176,8 +176,6 @@ class Preprocessing:
     for unit in df["Unit"].unique():
       
       for i in df["iteration"]:
-        print(unit, i)
-
         flows = (
             df.loc[
               (df["Unit"] == unit) &
@@ -203,6 +201,33 @@ class Preprocessing:
     
     self.flows= df.astype({"Iteration": int})
 
+  def UnitFlowsV2(self):
+    Preprocessing.JSON_to_Pandas(self)
+    df = self.unitdf[["Unit", "flow", "iteration"]]
+
+    mdf = pd.DataFrame()
+    for unit, unit_data in df.groupby("Unit"):
+      for iteration, iteration_data in unit_data.groupby("iteration"):
+        flows = iteration_data["flow"].iloc[0]
+        for stream_type, stream_data in flows.items():
+          for chem, chem_data in stream_data.items():
+            for basis, value in chem_data.items():
+              mdf = pd.concat([
+                        mdf, 
+                        pd.DataFrame({
+                            "Unit": [unit],
+                            "Iteration": [iteration],
+                            "Stream Type": [stream_type],
+                            "Chemical": [chem],
+                            basis: [abs(value)]
+                          })
+                        ], ignore_index=True)
+
+    self.flows = mdf.groupby(
+              ['Unit', 'Iteration', 'Stream Type', 'Chemical'], 
+              as_index=False
+            ).first(
+            ).astype({"Iteration": int})
 
 if __name__ == "__main__":
   gpuEnabled = True

@@ -16,16 +16,31 @@
   },
   "Basis": {
     "Get Flows": ["MgCl2"],
-    "Target Flow": "1 mtpd",
+    "Target Flow": "2 mtpd",
     "Target Compound": "NH3",
     "Batches per Hour": 3,
     "Conversion": 0.8,
     "Overall Reaction": {
-      "MgCl2": -3,
-      "N2": -1,
-      "H2O": -3,
-      "NH3": 2,
-      "O2": 1.5
+      "MgCl2": {
+        "stoich": -3,
+        "unit": "EL-101"
+      },
+      "N2": {
+        "stoich": -1,
+        "unit": "R-102"
+      },
+      "H2O": {
+        "stoich": -3,
+        "unit": "R-101"
+      },
+      "NH3": {
+        "stoich": 2,
+        "unit": "R-103"
+      },
+      "O2": {
+        "stoich": 1.5,
+        "unit": "R-101"
+      }
     }
   },  
   "Stages": {
@@ -64,12 +79,19 @@
           "pressure": "1 atm"
         }
       },
-      "depends_on": {
-        "EL-101": {
-          "dependent compound": "Mg",
-          "compound": "N2",
-          "stoich": 0.333333
-        }
+        "depends_on": {
+          "EL-101": {
+            "dependent compound": "Mg",
+            "compound": "N2",
+            "stoich": 0.333333,
+            "state": 0
+          },
+          "R-102": {
+            "dependent compound": "Mg",
+            "compound": "N2",
+            "stoich": 0.333333,
+            "state": -1
+          }
       },
       "seperation": {
         "reagents": [
@@ -92,7 +114,8 @@
           "EL-101": {
             "dependent compound": "Cl2",
             "compound": "H2O",
-            "stoich": 1
+            "stoich": 1,
+            "state": 0
           }
         },
         "source": {

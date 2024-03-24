@@ -39,7 +39,18 @@ class SinglePass(Balance, Therm):
     SinglePass.__cfg__(self)
     cfg = self.c
 
+    if itr >0: 
+      with open(f'states/iter_{itr-1}.json', "r") as f: 
+        pstate = json.load(f)
+
     print('======', f'Iteration: {itr}', '======', sep='\n')
+    for unit, uo in cfg["Units"].items():
+        flow = uo.setdefault("flow", {})
+        flow.setdefault("reagents", {})
+        flow.setdefault("products", {})
+        flow.setdefault("side", {})
+        uo.setdefault("source", {})
+        uo.setdefault("depends_on", {})
 
     # Order of how unit operations are called
     for stage in cfg["Stages"]:
@@ -48,30 +59,31 @@ class SinglePass(Balance, Therm):
         pprint.pprint(f"=== Init Stage: {stage}, Unit: {unit}, Iteration: {itr} ===")
 
         uo = cfg["Units"][unit]
-        uo.setdefault("flow", {}).setdefault("reagents", {})
-        uo.setdefault("flow", {}).setdefault("products", {})
-        uo.setdefault("flow", {}).setdefault("side", {})
-        uo.setdefault("source", {})
-        uo.setdefault("depends_on", {})
-        
         conv = min(float(uo["conversion"]), 1) if "conversion" in uo else 1
 
         # variable flow rate dependent sources  
-        for dep in uo["depends_on"].keys():
+        for k,v in uo["depends_on"].items():
+          print("RUNNING DEP HERE _______ ", k)
 
-          row = uo["depends_on"][dep]
-          dcomp = row["dependent compound"]
-          dn = cfg["Units"][dep]["flow"]["products"][dcomp][self.cols["n"]]
+          dcomp = v["dependent compound"]
 
-          comp, stoich = row["compound"], row["stoich"]
-          n = dn * stoich
+          state_dict = pstate["Units"] if v["state"] <0 and itr>0 else cfg["Units"]
+
+          dn = state_dict.get(k, {}).get("flow", {}).get("products", {}
+                        ).get(dcomp, {}).get(self.cols["n"], 0)
+
+        
+          comp, stoich = v["compound"], v["stoich"]
+          cf = uo["flow"]["reagents"].get(comp, {}).get(self.cols["n"], 0)
+          n = dn * stoich + cf
+          print(n, dn, cf)
 
           m = (self.q(n, 'kmol/batch') * 
                       self.q(self.subs[comp].mass, 'g/mol')
                     ).to("kg/batch")
 
           print(" ".join([
-                  f"getting dependent flows from {dep} from {dcomp},",
+                  f"getting dependent flows from {k} from {dcomp},",
                   f"got {dn:.2f} {self.cols['n']} with stoich {stoich},",
                   f"{comp} is {n:.2f} {self.cols['n']}"
                 ]))
@@ -83,7 +95,7 @@ class SinglePass(Balance, Therm):
             for comp in airFracs.keys():
 
               uo["flow"]["reagents"][comp] = {
-                    self.cols["n"]: n * airFracs[comp],
+                    self.cols["n"]: (n) * airFracs[comp],
                   }
           else:
             uo["flow"]["reagents"][comp] = {
@@ -97,7 +109,7 @@ class SinglePass(Balance, Therm):
           if "PSA" in unit: uops = uo["seperation"]["reagents"]
           else: uops = list(uo["reaction"]["reagents"].keys())
 
-          # Set flows from material balance for initCompounds
+          # Set flows from material balance
           for comp in [x for x in uops if x in cfg["Basis"]["Get Flows"]]:
             
             row = self.mb.loc[
@@ -118,7 +130,7 @@ class SinglePass(Balance, Therm):
                     self.cols["m"]: m,
                   }
 
-        # stage>0 and itr>0 stages, get reagent flows from input unit               
+        # stage>0 and itr>0 stages, get reagent flows from input/recycle unit               
         else:
           if not "PSA" in unit: p = "reaction"
           else: p = "seperation"
@@ -149,14 +161,11 @@ class SinglePass(Balance, Therm):
               recy = uo["recycle"][iuo]
               for comp in recy.keys():
 
-                with open(f'states/iter_{itr-1}.json', "r") as f: 
-                  re = json.load(f)["Units"][iuo]["flow"]
-
                 for stream in ["products", "side"]:
-                  if comp in re[stream].keys():
-
-                    n = re[stream][comp][self.cols["n"]]
-                    m = re[stream][comp][self.cols["m"]]
+                  if comp in pstate["Units"][iuo]["flow"][stream].keys():
+                    vv = pstate["Units"][iuo]["flow"][stream][comp]
+                    
+                    n, m = vv[self.cols["n"]], vv[self.cols["m"]]
 
                     print(" ".join([
                       f"getting recycle flows from {iuo} for {comp},",
@@ -219,6 +228,7 @@ class SinglePass(Balance, Therm):
         elif "PSA" in unit:
           output = uo["seperation"]["side"] + uo["seperation"]["products"]
           if set(list(uo["flow"]["reagents"].keys())) == set(output):
+            # Generate product/side flows
             for reagent in uo["seperation"]["reagents"]:
               if reagent in uo["seperation"]["products"]: eta, prod = conv, "products"
               else: eta, prod = 1, "side"
@@ -242,6 +252,7 @@ class SinglePass(Balance, Therm):
               if prod in uo["flow"]: uo["flow"][prod].update(flow_data)
               else: uo["flow"][prod] = flow_data
             
+            #If seperation isnt 100%
             if conv < 1:
               for reagent in uo["seperation"]["products"]:
                 rflow = uo["flow"]["seperation"][reagent]
@@ -262,9 +273,7 @@ class SinglePass(Balance, Therm):
         else: raise Exception(f"Missing reagents {stage} {unit}")
 
         pprint.pprint(f"=== Exc Stage: {stage}, Unit: {unit}, Iteration: {itr} ===")
-      
-      if stage == str(4): break
-    
+          
     if write:
       with open(f'states/iter_{itr}.json', 'w') as js:
         json.dump(self.c, js, indent=4)

@@ -1,6 +1,8 @@
 
 import os
 import json
+import numpy as np
+
 from functools import reduce
 
 if os.getcwd().split("/")[-1].endswith("src"):
@@ -30,9 +32,9 @@ class SteadyState(SinglePass):
         with open(f'states/iter_{iter-1}.json', "r") as f: ps = json.load(f)
         pflow = self.q(reduce(lambda d, k: d[k], pathing, ps), 'kg/batch')
 
-        if flow == pflow: 
+        if flow.__round__(7) == pflow.__round__(7): 
           self.ssflow = flow
-          SteadyState.FlowFeatures(self, iter, excess)
+          SteadyState.FlowFeatures(self, iter)
           break
       
       if iter >= self.maxIter: break
@@ -47,8 +49,8 @@ class SteadyState(SinglePass):
       if iter == 0: SteadyState.Steady_State_Flow(self)
       else:
         ssFlow = self.ssflow.to('mtpd').__round__(3)
-        if ssFlow != self.targetFlow.__round__(3):
-          e = (self.targetFlow/ssFlow).magnitude
+        if not np.isclose(ssFlow, self.targetFlow, atol=0.0001 * self.targetFlow):
+          e = (self.targetFlow/ssFlow).magnitude + .0005
           SteadyState.Steady_State_Flow(self, excess=e)
         else:
           print(f"Converged setpoint to target flow after {iter} iterations")
