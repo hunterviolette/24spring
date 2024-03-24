@@ -68,25 +68,58 @@ class Air:
 
 class Balance(UnitConversion): 
   def __init__(self, 
-              targetflow: int = 1, # in metric ton per day
-              targetCompound: str = "NH3",
               cfgPath: str = "../cfg.json"
             ) -> None:
     
     UnitConversion.__init__(self)
     
-    self.targetFlow = self.q(targetflow, 'mtpd')
-
     with open(cfgPath, "r") as f: self.c = json.load(f)
 
     self.subs = {
       x: Substance.from_formula(x) for x in self.c["Compounds"]}
     
-    if not targetCompound in self.subs.keys(): 
-      raise Exception(f"{targetCompound} not a key in Compounds in cfg.json")
-    else: self.targetCompound = targetCompound
-    
     self.subs["Air"] = Air
+
+  def MaterialBalance(self):
+    cfg = self.c
+
+    tf = cfg["Basis"]["Target Flow"].split(" ")
+
+    targetCompound = cfg["Basis"]["Target Compound"]
+    targetFlow = self.q(float(tf[0]), tf[1])
+    targetMW = self.q(self.subs[targetCompound].mass, 'gram/mol')
+    targetStoich = float(cfg["Basis"]["Overall Reaction"][targetCompound])
+
+    bph = cfg.setdefault("Basis", {}).setdefault("Batches per Hour", 1)
+
+    self.ureg.define(f'batch = {60 / bph} * min')
+    self.q = self.ureg.Quantity
+
+    conv = min(cfg["Basis"].setdefault("Conversion", 1), 1) 
+    molph = (targetFlow / targetMW / conv).to(f'kmol/batch')
+
+    df = pd.DataFrame()
+    for comp, stoich in self.c["Basis"]["Overall Reaction"].items():
+      mw = self.q(self.subs[comp].mass, 'gram/mol')
+
+      molFlow = (molph / targetStoich * stoich).__round__(3)
+      massFlow = (molFlow * mw).to("mtpd").__round__(3)
+
+      df = pd.concat([df, 
+                      pd.DataFrame({
+                        "Component": [comp],
+                        "Stoch Coeff": [stoich],
+                        "Molecular Weight (grams/mol)": [mw.magnitude],
+                        f"Component Flow (kmol/h)": [molFlow.to('kmol/h').magnitude],
+                        "Mass Flow (mtpd)": [massFlow.magnitude],
+                        "Mass Flow (kg/h)": [massFlow.to('kg/h').magnitude],
+                        f"Flow (kmol/batch)": [molFlow.to('kmol/batch').magnitude],
+                        f"Flow (kg/batch)": [massFlow.to('kg/batch').magnitude]
+                      })
+                    ])
+
+    print(df)
+    self.mb, self.targetCompound, self.targetFlow = df, targetCompound, targetFlow
 
   def OverallMaterialBalance(self, verbose:bool=False) -> None:
 
@@ -244,7 +277,7 @@ class Balance(UnitConversion):
         sep='\n')
 
 if __name__ == "__main__":
-  obal, fracConv = False, True
+  obal, fracConv = False, False
   fuel, urea = False, False
 
   #y = Air.MassPercent("N2")
@@ -255,3 +288,5 @@ if __name__ == "__main__":
   if fracConv: x.FractionalConversion(True)
   if urea: x.UreaUnit(True)
   if fuel: x.FuelBurner(True)
+
+  x.MaterialBalance()

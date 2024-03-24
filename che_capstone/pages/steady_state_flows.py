@@ -42,15 +42,15 @@ class UnitFlows(DashUtil, Preprocessing):
         )
     def cb(maxIter):
 
-      cols = ["Flow (kmol/20-min-batch)", 
-              "Flow (kg/20-min-batch)"]
+      cols = ["Flow (kmol/batch)", 
+              "Flow (kg/batch)"]
 
       UnitFlows.UnitFlows(self)
       df = self.flows
       
       mdiv = []
 
-      df = df.loc[df["Iteration"] <= maxIter]
+      df = df.loc[df["Iteration"] <= maxIter].round(5).sort_values("Iteration")
       for unit in [x for x in df["Unit"].unique()]:
         for stream in df.loc[(df["Unit"] == unit)]["Stream Type"].unique():
           d = df.loc[(df["Stream Type"] == stream) & (df["Unit"] == unit)].copy()
@@ -73,16 +73,19 @@ class UnitFlows(DashUtil, Preprocessing):
                       name=chem
                   ))
               
-              annotations = [dict(
-                x=x,
-                y=y + (d[col].max() - d[col].min()) *.0000000005, 
-                text=str(y),
-                showarrow=False,
-                font=dict(size=8),
-                yanchor='bottom', 
-                yshift=10  
-                  ) for x, y in zip(d["Iteration"], 
-                                    d[col].round(3))]
+              annotations = [
+                dict(
+                  x=x,
+                  y=y + (d[col].max() - d[col].min()) * 0.0000000005, 
+                  text=str(y),
+                  showarrow=False,
+                  font=dict(size=8),
+                  yanchor='bottom', 
+                  yshift=10  
+                ) 
+                for x, y in zip(d["Iteration"], d[col].round(3))
+                if x % 4 == 0
+              ]
               
               fig.update_layout(
                   xaxis_title='Number of iterations',

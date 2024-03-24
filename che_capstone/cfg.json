@@ -14,15 +14,20 @@
     "CO2": "124-38-9", 
     "Ar": "argon"
   },
-  "initCompounds": ["MgCl2"],
-  "OverallReaction": {
-    "MgCl2": -3,
-    "N2": -1,
-    "H2O": -3,
-    "NH3": 2,
-    "O2": 1.5,
-    "MgCl2_r": 3
-  },
+  "Basis": {
+    "Get Flows": ["MgCl2"],
+    "Target Flow": "1 mtpd",
+    "Target Compound": "NH3",
+    "Batches per Hour": 3,
+    "Conversion": 0.8,
+    "Overall Reaction": {
+      "MgCl2": -3,
+      "N2": -1,
+      "H2O": -3,
+      "NH3": 2,
+      "O2": 1.5
+    }
+  },  
   "Stages": {
     "0": ["EL-101", "PSA-101"],
     "1": ["R-101", "R-102"],
@@ -35,9 +40,6 @@
       "temperature": "1000 K",
       "pressure": "1 atm",
       "conversion": ".8",
-      "excess": {
-        "MgCl2": 1.8
-      },
       "recycle": {
           "EL-101": {"MgCl2": 1},
           "R-103": {"MgCl2": 1}
@@ -70,9 +72,13 @@
         }
       },
       "seperation": {
-        "reagents": ["N2", "Ar_air", "CO2_air", "O2_air"],
+        "reagents": [
+          "N2", "Ar_air", 
+          "CO2_air", "O2_air"
+        ],
         "products": ["N2"],
-        "side": ["Ar_air", "CO2_air", "O2_air"]
+        "side": [
+          "Ar_air", "CO2_air", "O2_air"]
         }
       },
     "R-101": {

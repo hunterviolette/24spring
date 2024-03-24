@@ -1,5 +1,7 @@
 
 import os
+import json
+from functools import reduce
 
 if os.getcwd().split("/")[-1].endswith("src"):
   from core import SinglePass
@@ -8,27 +10,56 @@ else:
 
 class SteadyState(SinglePass):
   def __init__(self, 
-            targetFlow: int = 1, # mtpd
-            targetCompound: str = "NH3",
             cfgPath: str = "./cfg.json",
-            maxIterations: int = 50
+            maxIterations: int = 25
           ) -> None:
     
-    print(targetFlow, targetCompound)
     self.maxIter = maxIterations
 
-    SinglePass.__init__(self,
-              targetFlow=targetFlow, 
-              targetCompound=targetCompound,
-              cfgPath=cfgPath
-            )
+    SinglePass.__init__(self, cfgPath)
     
-  def SSA(self):
+  def Steady_State_Flow(self, excess:float=1):
     
     for iter in range(self.maxIter):
-      SteadyState.FlowFeatures(self, iter)
+      SteadyState.IterFlows(self, True, iter, excess)
+      
+      pathing = ["Units", "R-103", "flow", "products", self.targetCompound, self.cols["m"]]
+      flow = self.q(reduce(lambda d, k: d[k], pathing, self.c), 'kg/batch')
+
+      if iter>0:
+        with open(f'states/iter_{iter-1}.json', "r") as f: ps = json.load(f)
+        pflow = self.q(reduce(lambda d, k: d[k], pathing, ps), 'kg/batch')
+
+        if flow == pflow: 
+          self.ssflow = flow
+          SteadyState.FlowFeatures(self, iter, excess)
+          break
+      
+      if iter >= self.maxIter: break
+    
+  def Steady_State_Setpoint(self):
+
+    for iter in range(self.maxIter):
+      [os.remove(f"./states/{x}") for x in os.listdir('./states')]
+
+      print(f"{iter} Iteration converging steady state flows at {self.targetFlow}")
+
+      if iter == 0: SteadyState.Steady_State_Flow(self)
+      else:
+        ssFlow = self.ssflow.to('mtpd').__round__(3)
+        if ssFlow != self.targetFlow.__round__(3):
+          e = (self.targetFlow/ssFlow).magnitude
+          SteadyState.Steady_State_Flow(self, excess=e)
+        else:
+          print(f"Converged setpoint to target flow after {iter} iterations")
+          SteadyState.Steady_State_Flow(self, excess=e)
+          break
+
+      if iter >= self.maxIter: break
+        
+    print(self.ssflow.to('mtpd'), self.targetFlow)
 
 if __name__ == "__main__":
-  SteadyState().ssa()
+  SteadyState().Steady_State_Flow()
 
 

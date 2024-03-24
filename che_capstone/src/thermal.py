@@ -4,7 +4,7 @@ import json
 import numpy as np
 
 from typing import List
-from thermo import Chemical, Mixture
+from thermo import Chemical, Mixture, volume
 
 if os.getcwd().split("/")[-1].endswith("src"):
   from unit_registry import UnitConversion
@@ -184,7 +184,7 @@ class Therm(UnitConversion):
         json.dump(cfg, j, indent=4)
 
   @staticmethod
-  def ReactionDict(uo: dict, cfg: dict, col: str = "Flow (kmol/20-min-batch)"):
+  def ReactionDict(uo: dict, cfg: dict, col: str = "Flow (kmol/batch)"):
     rxn = {}
     for side in ["reagents", "products"]:
       comps, molFracs, name = [], [], []
@@ -194,7 +194,7 @@ class Therm(UnitConversion):
           comps.append(cfg["Compounds"][reagent])
           
           molFracs.append(uo["flow"][side][reagent][col] / 
-                            sum(uo["flow"][side][key]["Flow (kmol/20-min-batch)"] 
+                            sum(uo["flow"][side][key][col] 
                                 for key in uo["flow"][side].keys()
                                 if key in uo["reaction"][side]
                                 and inDB
@@ -423,8 +423,34 @@ class Therm(UnitConversion):
         sep='\n'
       )
 
+  def Ammonia(self):
+    for y in [225, 250, 273, 298]:
+      t = self.q(y,'degK').magnitude
+
+      print(f"{y} Kelvin")
+      for x in [1, 5, 10, 15, 20, 30, 50]:
+        p = self.q(x,'bar').to("Pa").magnitude
+
+        c = Chemical("ammonia", T=t, P=p)
+        
+        Vs = self.q(
+                volume.COSTALD(
+                  T=t, Tc=c.Tc, 
+                  Vc=c.Vc, omega=c.omega, 
+                ), 'm**3/mol')
+
+        rho = self.q(
+                volume.COSTALD_compressed(
+                  T=t, P=p, Psat=c.Psat,
+                  Tc=c.Tc, Pc=c.Pc, omega=c.omega, 
+                  Vs=Vs.magnitude
+                )
+                , 'm**3/mol')
+
+        print(f"phase: {c.phase} pressure: {x} bar, {rho}")
+
 if __name__ == "__main__":
   x = Therm()
-  x.init_EL101_Q()
-  x.R102_Q()
-  
+  #x.init_EL101_Q()
+  #x.R102_Q()
+  x.Ammonia()

@@ -15,35 +15,27 @@ else:
 class SinglePass(Balance, Therm):
 
   def __init__(self, 
-              targetFlow: int = 1, # mtpd
-              targetCompound: str = "NH3",
               cfgPath: str = "../cfg.json"
             ) -> None:
     
     self.cPath = cfgPath
-    Balance.__init__(self, targetFlow, targetCompound, cfgPath)
+    Balance.__init__(self, cfgPath)
 
-    SinglePass.FractionalConversion(self)
-    self.batchFlows = self.batchFlows.drop(
-        columns=["Stoch Coeff", "Mass Flow (mtpd/20-min-batch)"]
-      ).rename(columns={
-        "Component Flow (kmol/20-min-batch)":"Flow (kmol/20-min-batch)",
-        "Mass Flow (kg/20-min-batch)":"Flow (kg/20-min-batch)"
-      })
-    
-    print(self.batchFlows)
+    SinglePass.MaterialBalance(self)
+
+    print(self.mb)
     
     self.cols = {
           "mw": 'Molecular Weight (grams/mol)',
-          "n": "Flow (kmol/20-min-batch)",
-          "m": "Flow (kg/20-min-batch)"
+          "n": "Flow (kmol/batch)",
+          "m": "Flow (kg/batch)"
         }
     
   def __cfg__(self):
     # Need to open fresh config or previous state carries over
     with open(self.cPath, "r") as f: self.c = json.load(f)
 
-  def IterFlows(self, write:bool=False, itr:int=0):
+  def IterFlows(self, write:bool=False, itr:int=0, excess:float=1):
     SinglePass.__cfg__(self)
     cfg = self.c
 
@@ -106,16 +98,12 @@ class SinglePass(Balance, Therm):
           else: uops = list(uo["reaction"]["reagents"].keys())
 
           # Set flows from material balance for initCompounds
-          for comp in [x for x in uops if x in cfg["initCompounds"]]:
+          for comp in [x for x in uops if x in cfg["Basis"]["Get Flows"]]:
             
-            row = self.batchFlows.loc[
-              (self.batchFlows["Component"] == comp) & 
-              (self.batchFlows[self.cols["m"]] < 0)
-              ]
-
-            if comp in cfg["Units"][unit].get("excess", {}).keys(): 
-              excess = cfg["Units"][unit]["excess"][comp]
-            else: excess = 1    
+            row = self.mb.loc[
+              (self.mb["Component"] == comp) & 
+              (self.mb[self.cols["m"]] < 0)
+              ] 
 
             n = abs(float(row[self.cols["n"]].values[0])) * excess
             m = abs(float(row[self.cols["m"]].values[0])) * excess
@@ -130,7 +118,7 @@ class SinglePass(Balance, Therm):
                     self.cols["m"]: m,
                   }
 
-        # n>0 and itr>0 stages, get reagent flows from input unit               
+        # stage>0 and itr>0 stages, get reagent flows from input unit               
         else:
           if not "PSA" in unit: p = "reaction"
           else: p = "seperation"
@@ -282,7 +270,6 @@ class SinglePass(Balance, Therm):
         json.dump(self.c, js, indent=4)
 
   def FlowFeatures(self, itr):
-    SinglePass.IterFlows(self, False, itr)
     SinglePass.dH_Mixture(self)
     SinglePass.HeatRxn(self)
 
