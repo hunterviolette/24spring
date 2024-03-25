@@ -68,6 +68,8 @@ class Master(SteadyState, Preprocessing):
     print('+'*10, self.flows, '+'*10, self.ssbal, sep='\n')
 
   def main(self):
+    Master.Steady_State_Setpoint(self)
+    
     if self.tables: 
 
       Master.Df_To_HTML(
@@ -78,7 +80,6 @@ class Master(SteadyState, Preprocessing):
           name="./assets/non_ss_balance"
         )
       
-      Master.Steady_State_Setpoint(self)
       Master.CloseBalance(self, debug=False)
       df = self.flows
       
