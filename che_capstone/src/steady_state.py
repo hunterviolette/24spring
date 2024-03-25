@@ -23,7 +23,7 @@ class SteadyState(SinglePass):
   def Steady_State_Flow(self, excess:float=1):
     
     for iter in range(self.maxIter):
-      SteadyState.IterFlows(self, True, iter, excess)
+      SteadyState.IterFlows(self, True, iter, excess, True)
       
       pathing = ["Units", "R-103", "flow", "products", self.targetCompound, self.cols["m"]]
       flow = self.q(reduce(lambda d, k: d[k], pathing, self.c), 'kg/batch')

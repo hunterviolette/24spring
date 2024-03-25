@@ -2,7 +2,7 @@ import plotly.graph_objects as go
 import dash_bootstrap_components as dbc
 import pandas as pd
 
-from dash import dcc, html, Input, Output, callback, State, dash_table, register_page
+from dash import dcc, html, Input, Output, callback, State, register_page
 
 if __name__ == '__main__':
     from util.util import Preprocessing, DashUtil

@@ -21,26 +21,11 @@
     "Batches per Hour": 3,
     "Conversion": 0.8,
     "Overall Reaction": {
-      "MgCl2": {
-        "stoich": -3,
-        "unit": "EL-101"
-      },
-      "N2": {
-        "stoich": -1,
-        "unit": "R-102"
-      },
-      "H2O": {
-        "stoich": -3,
-        "unit": "R-101"
-      },
-      "NH3": {
-        "stoich": 2,
-        "unit": "R-103"
-      },
-      "O2": {
-        "stoich": 1.5,
-        "unit": "R-101"
-      }
+      "MgCl2": {"stoich": -3, "unit": "EL-101"},
+      "N2": {"stoich": -1, "unit": "R-102"},
+      "H2O": {"stoich": -3, "unit": "R-101"},
+      "NH3": {"stoich": 2, "unit": "R-103"},
+      "O2": {"stoich": 1.5, "unit": "R-101"}
     }
   },  
   "Stages": {
@@ -54,7 +39,7 @@
     "EL-101": {
       "temperature": "1000 K",
       "pressure": "1 atm",
-      "conversion": ".8",
+      "conversion": "1",
       "recycle": {
           "EL-101": {"MgCl2": 1},
           "R-103": {"MgCl2": 1}
@@ -202,7 +187,8 @@
           "PSA-102": {"HCl": 1}
         },
         "recycle": {
-          "R-103": {"Mg3N2": 1}
+          "R-103": {"Mg3N2": 1},
+          "PSA-103": {"HCl": 1}
         },
       "limiting_reagent": "Mg3N2",
       "reaction": {

@@ -35,7 +35,7 @@ class SinglePass(Balance, Therm):
     # Need to open fresh config or previous state carries over
     with open(self.cPath, "r") as f: self.c = json.load(f)
 
-  def IterFlows(self, write:bool=False, itr:int=0, excess:float=1):
+  def IterFlows(self, write:bool=False, itr:int=0, excess:float=1, verbose:bool=True):
     SinglePass.__cfg__(self)
     cfg = self.c
 
@@ -43,7 +43,7 @@ class SinglePass(Balance, Therm):
       with open(f'states/iter_{itr-1}.json', "r") as f: 
         pstate = json.load(f)
 
-    print('======', f'Iteration: {itr}', '======', sep='\n')
+    if verbose: print('======', f'Iteration: {itr}', '======', sep='\n')
     for unit, uo in cfg["Units"].items():
         flow = uo.setdefault("flow", {})
         flow.setdefault("reagents", {})
@@ -56,15 +56,13 @@ class SinglePass(Balance, Therm):
     for stage in cfg["Stages"]:
       # For each unit in each stage 
       for unit in cfg["Stages"][stage]:
-        pprint.pprint(f"=== Init Stage: {stage}, Unit: {unit}, Iteration: {itr} ===")
+        if verbose: pprint.pprint(f"=== Init Stage: {stage}, Unit: {unit}, Iteration: {itr} ===")
 
         uo = cfg["Units"][unit]
         conv = min(float(uo["conversion"]), 1) if "conversion" in uo else 1
 
         # variable flow rate dependent sources  
         for k,v in uo["depends_on"].items():
-          print("RUNNING DEP HERE _______ ", k)
-
           dcomp = v["dependent compound"]
 
           state_dict = pstate["Units"] if v["state"] <0 and itr>0 else cfg["Units"]
@@ -76,13 +74,12 @@ class SinglePass(Balance, Therm):
           comp, stoich = v["compound"], v["stoich"]
           cf = uo["flow"]["reagents"].get(comp, {}).get(self.cols["n"], 0)
           n = dn * stoich + cf
-          print(n, dn, cf)
 
           m = (self.q(n, 'kmol/batch') * 
                       self.q(self.subs[comp].mass, 'g/mol')
                     ).to("kg/batch")
 
-          print(" ".join([
+          if verbose: print(" ".join([
                   f"getting dependent flows from {k} from {dcomp},",
                   f"got {dn:.2f} {self.cols['n']} with stoich {stoich},",
                   f"{comp} is {n:.2f} {self.cols['n']}"
@@ -120,7 +117,7 @@ class SinglePass(Balance, Therm):
             n = abs(float(row[self.cols["n"]].values[0])) * excess
             m = abs(float(row[self.cols["m"]].values[0])) * excess
             
-            print(" ".join([
+            if verbose: print(" ".join([
                 f"getting flows from OMB for {comp},",
                 f"got {n:.2f} {self.cols['n']}",
               ]))
@@ -139,20 +136,24 @@ class SinglePass(Balance, Therm):
           for comp in uo[p]["reagents"]:
             for input in uo.get("inputs", {}):
               inputuo = cfg["Units"][input]
-              if comp in inputuo["flow"]["products"].keys():
-                
-                n = inputuo["flow"]["products"][comp][self.cols["n"]]
-                m = inputuo["flow"]["products"][comp][self.cols["m"]]
+              for x in ["products", "side"]:
+                if comp in inputuo["flow"][x].keys():
+                  
+                  n = inputuo["flow"][x][comp][self.cols["n"]]
+                  m = inputuo["flow"][x][comp][self.cols["m"]]
 
-                print(" ".join([
-                    f"getting flows from {input} for {comp},",
-                    f"got {n:.2f} {self.cols['n']}",
-                  ]))
-                    
-                uo["flow"]["reagents"][comp] = {
-                  self.cols["n"]: n,
-                  self.cols["m"]: m
-                }
+                  if verbose: print(" ".join([
+                      f"getting flows from {input} for {comp},",
+                      f"got {n:.2f} {self.cols['n']}",
+                    ]))
+                      
+                  uo["flow"]["reagents"][comp] = {
+                    self.cols["n"]: n + uo["flow"]["reagents"
+                                          ].get(comp, {}).get(self.cols["n"], 0),
+                                          
+                    self.cols["m"]: m + uo["flow"]["reagents"
+                                          ].get(comp, {}).get(self.cols["m"], 0)
+                    }
 
           # Update reagents with recycles from previous state
           if "recycle" in uo.keys() and itr>0:
@@ -167,18 +168,21 @@ class SinglePass(Balance, Therm):
                     
                     n, m = vv[self.cols["n"]], vv[self.cols["m"]]
 
-                    print(" ".join([
+                    if verbose: print(" ".join([
                       f"getting recycle flows from {iuo} for {comp},",
                       f"from {stream} got {n:.2f} {self.cols['n']}",
                     ]))
                     
                     currentFlow = uo["flow"]["reagents"].get(comp, {}).get(self.cols["n"], 0)
                     if currentFlow > 0:
-                      print(f'New reagent flow for {comp}: {n+currentFlow:.2f}')
+                      if verbose: print(f'New reagent flow for {comp}: {n+currentFlow:.2f}')
                     
                     uo["flow"]["reagents"][comp] = {
-                        self.cols["n"]: n + currentFlow,
-                        self.cols["m"]: m + currentFlow
+                        self.cols["n"]: n + uo["flow"]["reagents"
+                                              ].get(comp, {}).get(self.cols["n"], 0),
+                                              
+                        self.cols["m"]: m + uo["flow"]["reagents"
+                                              ].get(comp, {}).get(self.cols["m"], 0)
                       }
                             
         # Do reaction
@@ -266,13 +270,13 @@ class SinglePass(Balance, Therm):
           else:
             e = (set(uo["flow"]["reagents"].keys()) ^ 
                   set(uo["seperation"]["reagents"]))
-            print(e)
+            if verbose: print(e)
             
             raise Exception(f"Seperation reagents not found for {unit}, missing: {e}")
           
         else: raise Exception(f"Missing reagents {stage} {unit}")
 
-        pprint.pprint(f"=== Exc Stage: {stage}, Unit: {unit}, Iteration: {itr} ===")
+        if verbose: pprint.pprint(f"=== Exc Stage: {stage}, Unit: {unit}, Iteration: {itr} ===")
           
     if write:
       with open(f'states/iter_{itr}.json', 'w') as js:
