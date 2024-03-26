@@ -20,15 +20,7 @@ class Master(SteadyState, Preprocessing):
             )
   
   def CloseBalance(self, debug: bool=True):
-    Master.UnitFlowsV2(self)
-    self.flows = self.flows.loc[self.flows["Iteration"] == self.flows["Iteration"].max()
-              ].assign(**{
-                "Flow (mtpd)": lambda x: x["Flow (kg/batch)"
-                  ].apply(lambda y: self.q(y, 'kg/batch').to('mtpd').magnitude),
-                
-                "Stream Type": lambda x: x["Stream Type"
-                  ].replace({"products": "outlet", "reagents": "inlet"})
-                })
+    flow = self.flows.loc[self.flows["Iteration"] == self.flows["Iteration"].max()]
     
     if debug:
       path = max(os.listdir("./states"), key=lambda x: int(x.split("_")[-1].split(".")[0]))
@@ -65,10 +57,11 @@ class Master(SteadyState, Preprocessing):
     self.ssbal = df.drop(columns=["In Flow (kmol/batch)", "Out Flow (kmol/batch)"]
                   ).replace({0.000: True, -0.000: True})
     
-    print('+'*10, self.flows, '+'*10, self.ssbal, sep='\n')
+    print('+'*10, flow, '+'*10, self.ssbal, sep='\n')
 
   def main(self):
     Master.Steady_State_Setpoint(self)
+    Master.UnitFlowsV2(self)
     
     if self.tables: 
 
@@ -81,23 +74,50 @@ class Master(SteadyState, Preprocessing):
         )
       
       Master.CloseBalance(self, debug=False)
-      df = self.flows
-      
+      df = self.flows.assign(**{
+                "Flow (mtpd)": lambda x: x["Flow (kg/batch)"
+                  ].apply(lambda y: self.q(y, 'kg/batch').to('mtpd').magnitude),
+                
+                "Stream Type": lambda x: x["Stream Type"
+                  ].replace({"products": "outlet", "reagents": "inlet"})
+                })
+            
       Master.Df_To_HTML(
           self.ssbal,
           header="",
           name="./assets/ss_balance"
         )
+      
+      Master.Df_To_HTML(
+          df,
+          header="",
+          name="./assets/iteration_table"
+        )
+      
+      Master.Df_To_HTML(
+          df.loc[
+              (df["Iteration"] == df["Iteration"].max()) 
+            ].pivot_table(
+              index=['Unit', 'Iteration', "Stream Type"], 
+              columns='Chemical', 
+              values='Flow (kg/batch)', 
+              fill_value=""
+          ), 
+          header="Inlet/Outlet flows for unit operations (kg/batch) at steady state",
+          name="./assets/ss_pass"
+        )
 
       Master.Df_To_HTML(
-          df.pivot_table(
-            index=['Unit', 'Iteration', "Stream Type"], 
-            columns='Chemical', 
-            values='Flow (mtpd)', 
-            fill_value=0
+          df.loc[
+              (df["Iteration"] == df["Iteration"].min()) 
+            ].pivot_table(
+              index=['Unit', 'Iteration', "Stream Type"], 
+              columns='Chemical', 
+              values='Flow (kg/batch)', 
+              fill_value=""
           ), 
-          header="Inlet/Outlet flows for unit operations (kmol/batch) per iteration",
-          name="./assets/stream_iteration_table"
+          header="Inlet/Outlet flows for unit operations (kg/batch) at first pass",
+          name="./assets/s0_pass"
         )
       
       Master.Df_To_HTML(
