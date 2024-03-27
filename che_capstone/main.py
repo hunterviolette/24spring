@@ -130,7 +130,7 @@ class Master(SteadyState, Preprocessing):
                 values='Flow (mtpd)', 
                 fill_value="", 
           ), 
-          header="Inlet flows for unit operations (mtpd) at steady state",
+          header="Outlet flows for unit operations (mtpd) at steady state",
           name="./assets/outlet_ss"
         )
 
@@ -144,7 +144,7 @@ class Master(SteadyState, Preprocessing):
                 values='Flow (mtpd)', 
                 fill_value="", 
           ), 
-          header="Outlet flows for unit operations (mtpd) at steady state",
+          header="Inlet flows for unit operations (mtpd) at steady state",
           name="./assets/inlet_ss"
         )
 
