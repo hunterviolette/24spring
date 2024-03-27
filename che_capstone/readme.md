@@ -4,7 +4,7 @@
 ## Simulate chemical processes by writing a [config file](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
 - Converges all flows to steady state from "Basis" key in [cfg.json](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
 - Overall heat duty calculation for reactors: ```Q (kJ/mol) = enthalpy_streams_out - enthalpy_streams_in + heat_of_reaction ```
-- The ground-work for equation of state calculations for pump/compressors, heat exchangers, and flash calculations using Thermo is mostly complete but not integrated 
+- The ground-work for equation of state calculations for pump/compressors, heat exchangers, and flashes using Thermo is mostly complete but not integrated currently
 
 ## Process Flow Diagrams (PFD)
 ### Overall PFD
