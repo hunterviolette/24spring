@@ -1,6 +1,6 @@
-Basic implementation of a chemical process simulator using **Thermo [library](https://thermo.readthedocs.io/index.html#)** and **ChemPy [library](https://bjodah.github.io/chempy/latest/)**
+# Basic implementation of a chemical process simulator using **Thermo [library](https://thermo.readthedocs.io/index.html#)** and **ChemPy [library](https://bjodah.github.io/chempy/latest/)**
 
-- Currently implementation converges all flows to steady state from parameters in cfg[Basis].json
+- Currently implementation converges all flows to steady state from "Basis" key in **[cfg.json](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)**
 - Overall heat duty calculation for reactors: 
   ```Q (kJ/mol) = enthalpy_streams_out - enthalpy_streams_in + heat_of_reaction ```
 
