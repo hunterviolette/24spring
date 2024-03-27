@@ -40,5 +40,8 @@
 
 ![u](assets/psa_103.png)
 
+### Profitability vs Economy of Scale
+![p](assets/profitability.png)
+
 ### Unit Flows per Iteration (main.py)
 ![p](assets/iteration_table.png)
