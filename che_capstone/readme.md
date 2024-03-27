@@ -1,7 +1,10 @@
 # Basic implementation of a chemical process simulator using [Thermo](https://thermo.readthedocs.io/index.html#) and [ChemPy](https://bjodah.github.io/chempy/latest/)
 
+
+## Simulate chemical processes by writing a [config file](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
 - Converges all flows to steady state from "Basis" key in [cfg.json](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
 - Overall heat duty calculation for reactors: ```Q (kJ/mol) = enthalpy_streams_out - enthalpy_streams_in + heat_of_reaction ```
+- The ground-work for equation of state calculations for pump/compressors, heat exchangers, and flash calculations using Thermo is mostly complete but not integrated 
 
 ## Process Flow Diagrams (PFD)
 ### Overall PFD
