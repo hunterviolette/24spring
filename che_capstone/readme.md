@@ -1,8 +1,7 @@
 # Basic implementation of a chemical process simulator using [Thermo](https://thermo.readthedocs.io/index.html#) and [ChemPy](https://bjodah.github.io/chempy/latest/)
 
-- Currently implementation converges all flows to steady state from "Basis" key in **[cfg.json](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)**
-- Overall heat duty calculation for reactors: 
-  ```Q (kJ/mol) = enthalpy_streams_out - enthalpy_streams_in + heat_of_reaction ```
+- Converges all flows to steady state from "Basis" key in [cfg.json](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
+- Overall heat duty calculation for reactors: ```Q (kJ/mol) = enthalpy_streams_out - enthalpy_streams_in + heat_of_reaction ```
 
 ## Process Flow Diagrams (PFD)
 ### Overall PFD
@@ -11,11 +10,10 @@
 ### Simulated PFD
 ![Simulated PFD](assets/sim_pfd.png)
 
-## Unit Operations
-### First Pass
+### First Pass Unit Flows 
 ![First Pass](assets/s0_pass.png)
 
-### Steady State Pass
+### Steady State Unit Flows
 ![Steady State Pass](assets/ss_pass.png)
 
 ### Steady State Material Balance
@@ -45,5 +43,5 @@
 ## PSA-103
 ![u](assets/psa_103.png)
 
-### Steady state pass of unit operations (main.py)
+### Unit Flows per Iteration (main.py)
 ![p](assets/iteration_table.png)
