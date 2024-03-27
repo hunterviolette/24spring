@@ -12,7 +12,6 @@ class Nomics(UnitConversion):
   def __init__(self) -> None:
     super().__init__()
 
-
   def main():
 
     cost = 10900000
