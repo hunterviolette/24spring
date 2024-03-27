@@ -10,25 +10,10 @@ if os.getcwd().split("/")[-1].endswith("src"):
 else: 
   from src.unit_registry import UnitConversion
 
-'''
-# Electrolysis
-  MgCl2 -> Mg + Cl2
-
-N2 Source:
-  3Mg + N2 -> Mg3 + N2 -> Mg3N2
-
-H2 Source: 
-  3Cl2 + 3H2O -> 6HCl + 1.5O2
-
-Main rxn:
-  Mg3N2 + 6HCl = 3MgCl2 + 2NH3
-
-Overall:
-  3MgCl2 + N2 + 3H2O -> 2NH3 + 1.5O2
-
-'''
-
 class Air: 
+  '''
+  Very basic implementation to mimic ChemPy.mass
+  '''
   mass = 28.9647
   n2frac = .7808
   o2frac = .20947
