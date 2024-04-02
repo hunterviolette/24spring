@@ -95,7 +95,7 @@ class Therm(UnitConversion):
     # Unit properties
     chms = [key for key, value in 
             cfg["Compounds"].items() 
-            if Therm.CheckChemical(self, value)]
+            if Therm.CheckChemical(value)]
 
     chemProps = [key for key, value 
                 in cfg["Compounds"].items() if key in chms]
@@ -211,11 +211,11 @@ class Therm(UnitConversion):
       
     return rxn
 
-  def dH_Mixture(self, col: str = "Flow (kmol/20-min-batch)"):
+  def dH_Mixture(self):
     cfg = self.c
 
     for unit in [x for x in cfg["Units"].keys()
-                if x.split("-")[0] in ["R", "EL"]]:
+                if x.split("-")[0] in ["R"]]:
       
       uo = cfg["Units"][unit]
       rxn = Therm.ReactionDict(uo, cfg)
@@ -261,8 +261,6 @@ class Therm(UnitConversion):
           not any(rxn["products"]["Compounds"]) or not any(rxn["products"]["Mole Fractions"]):
             
             dH = "Missing property data"
-            prods = self.q(1, 'Pa')
-            reags = self.q(1, 'Pa')
       else:
         dH = self.q(Therm.DeltaMixProperty(
                       t1=t,
@@ -275,7 +273,7 @@ class Therm(UnitConversion):
                       z0=rxn["reagents"]["Mole Fractions"],
                     ), "J/mol").to("kJ/mol").magnitude
         
-      uo["reaction"]["H mixtures (kJ/mol)"] = {
+      uo["reaction"]["dH mixtures (kJ/mol)"] = {
             "overall": dH
         }
 
@@ -284,7 +282,7 @@ class Therm(UnitConversion):
     cfg = self.c
 
     for unit in [x for x in cfg["Units"].keys()
-                if x.split("-")[0] in ["R", "EL"]]:
+                if x.split("-")[0] in ["R"]]:
       
       uo = cfg["Units"][unit]
 
@@ -307,7 +305,7 @@ class Therm(UnitConversion):
     cfg = self.c
 
     for unit in [x for x in cfg["Units"].keys()
-                if x.split("-")[0] in ["R", "EL"]]:
+                if x.split("-")[0] in ["R"]]:
       
       uo = cfg["Units"][unit]
       rxn = Therm.ReactionDict(uo, cfg)
@@ -351,6 +349,50 @@ class Therm(UnitConversion):
                             "Property Data": "Missing"
                           }
   
+  def Reactor_Q(self):
+    Therm.dH_Mixture(self)
+    Therm.HeatRxn(self)
+    Therm.Electrolysis_Q(self)
+    
+    cfg = self.c
+
+    for unit in [x for x in cfg["Units"].keys()
+                if x.split("-")[0] in ["R"]]:
+      
+      uo = cfg["Units"][unit]
+
+      q_mixture = uo["reaction"]["dH mixtures (kJ/mol)"]["overall"]
+      q_rxn = uo["reaction"]["heat of reaction (kJ/mol)"]["overall"]
+      q_overall = q_mixture + q_rxn
+
+      reagent = Therm.LimitingReagent(uo)
+      n = (uo["flow"]["reagents"][reagent][self.cols["n"]]).__abs__()
+
+      q_dot = self.q(q_overall, 'kJ/mol') * self.q(n, 'kmol/batch').to_base_units()
+
+      uo["reaction"]["Overall Molar Heat (kJ/mol)"] = q_overall
+      uo["reaction"]["Limiting Reagent Flow (kmol/batch)"] = n
+      uo["reaction"]["Utility (kW)"] = q_dot.magnitude
+      
+  def Electrolysis_Q(self):
+    cfg = self.c
+
+    for unit in [x for x in cfg["Units"].keys()
+                if x.split("-")[0] in ["EL"]]:
+      
+      uo = cfg["Units"][unit]
+      
+      reagent = Therm.LimitingReagent(uo)
+      n = uo["flow"]["reagents"][reagent][self.cols["n"]]
+
+      uo["reaction"]["Utility (kW)"] = (
+
+        self.q(n, 'kmol/batch') 
+        * 2 * self.q(1,'faraday_constant')
+        * self.q(3,'V')
+
+      ).to('kW').magnitude
+
   @staticmethod
   def EnthalpyFormation(d, t):
     '''
@@ -386,7 +428,7 @@ class Therm(UnitConversion):
     print(f"Initial MgCl2 Q (kJ/mol): {dH}",
           f"Power (kW): {q}", sep='\n',)
 
-  def R102_Q(self):
+  def R102_pQ(self):
     chem = "magnesium"
     h0 = Chemical(
               ID=chem, 
@@ -423,7 +465,7 @@ class Therm(UnitConversion):
         sep='\n'
       )
 
-  def Ammonia(self):
+  def AmmoniaVolume(self):
     for y in [225, 250, 273, 298]:
       t = self.q(y,'degK').magnitude
 
@@ -452,5 +494,5 @@ class Therm(UnitConversion):
 if __name__ == "__main__":
   x = Therm()
   #x.init_EL101_Q()
-  #x.R102_Q()
+  #x.R102_pQ()
   x.Ammonia()

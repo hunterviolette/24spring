@@ -24,6 +24,7 @@ class SteadyState(SinglePass):
     
     for iter in range(self.maxIter):
       SteadyState.IterFlows(self, True, iter, excess, True)
+      SteadyState.FlowFeatures(self, iter)
       
       pathing = ["Units", "R-103", "flow", "products", self.targetCompound, self.cols["m"]]
       flow = self.q(reduce(lambda d, k: d[k], pathing, self.c), 'kg/batch')
@@ -34,7 +35,6 @@ class SteadyState(SinglePass):
 
         if flow.__round__(7) == pflow.__round__(7): 
           self.ssflow = flow
-          SteadyState.FlowFeatures(self, iter)
           break
       
       if iter >= self.maxIter: break

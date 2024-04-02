@@ -283,8 +283,8 @@ class SinglePass(Balance, Therm):
         json.dump(self.c, js, indent=4)
 
   def FlowFeatures(self, itr):
-    SinglePass.dH_Mixture(self)
-    SinglePass.HeatRxn(self)
+    #SinglePass.ThermalProperties(self)
+    SinglePass.Reactor_Q(self)
 
     with open(f'states/iter_{itr}.json', 'w') as js:
         json.dump(self.c, js, indent=4)

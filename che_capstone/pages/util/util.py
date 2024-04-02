@@ -18,21 +18,25 @@ from typing import List
 class DashUtil:
 
   @staticmethod
-  def EvalAggTransforms(df: pd.DataFrame):
-    df = df.groupby(by=["model", "diam mean"], as_index=True
-                        ).agg({"jaccard index": ["count", 'mean', 'std'],
-                                "euclidean normalized rmse": ['mean'],
-                                "structural similarity": ['mean'],
-                                "average precision": ["mean"],
-                                "true positives": ["mean"],
-                                "false positives": ["mean"],
-                                "false negatives": ["mean"]
-                        }).reset_index(
-                        ).round(5)  
-    df.columns = df.columns.map(' '.join)
-    return df.sort_values("euclidean normalized rmse mean",
-          ).rename(columns={"jaccard index count": 'sample size'})
-
+  def FigAnnotations(
+      df: pd.DataFrame,
+      xcol: str,
+      ycol: str,
+      plot_every_n_points: int = 2
+    ): 
+    return [
+        dict(
+          x=x,
+          y=y + (df[ycol].max() - df[ycol].min()) * 0.0000000005, 
+          text=str(y),
+          showarrow=False,
+          font=dict(size=8),
+          yanchor='bottom', 
+          yshift=10  
+        ) 
+        for x, y in zip(df[xcol], df[ycol].round(3))
+        if x % plot_every_n_points == 0
+      ]
 
   @staticmethod
   def DarkDashTable(df, rows: int = 30):
@@ -152,7 +156,6 @@ class Preprocessing:
     if not os.path.exists(dir_path): os.makedirs(dir_path)
     else: print(f"Directory: {dir_path} exists")
 
-
   def JSON_to_Pandas(self, readDir: str = "./states"):
 
     mdf = pd.DataFrame()
@@ -228,6 +231,31 @@ class Preprocessing:
               as_index=False
             ).first(
             ).astype({"Iteration": int})
+
+  def HeatFlows(self):
+    if not hasattr(self, 'unitdf'): 
+      Preprocessing.JSON_to_Pandas(self)
+    
+    df = self.unitdf[["Unit", "reaction", "iteration"]]
+    df = df.loc[df["Unit"].apply(lambda x: x.split("-")[0] in ["R", "EL"])]
+
+    mdf = pd.DataFrame()
+    for unit, unit_data in df.groupby("Unit"):
+      for iteration, iteration_data in unit_data.groupby("iteration"):
+        dat = iteration_data["reaction"].iloc[0]
+        
+        mdf = pd.concat([
+          mdf, 
+          pd.DataFrame({
+            "Unit": [unit],
+            "Iteration": [int(iteration)],
+            "Overall Molar Heat (kJ/mol)": [dat.get('Overall Molar Heat (kJ/mol)', 0)],
+            "Limiting Reagent Flow (kmol/batch)": [dat.get("Limiting Reagent Flow (kmol/batch)", 0)],
+            "Utility (kW)": [dat.get("Utility (kW)", 0)]
+            })
+        ])
+
+    self.heat_flows = mdf
 
 if __name__ == "__main__":
   gpuEnabled = True
