@@ -84,40 +84,19 @@ class UnitFlows(DashUtil, Preprocessing):
                 )
               )
             
-        if len(figs) == 2:
-          mdiv.extend([
-              html.H3(f"Unit: {unit}",
-                      className=UnitFlows.Formatting()),
-
-              dbc.Row([
-                  dbc.Col([
-                      dcc.Graph(figure=figs[0]),
-                  ], width=6),
-                  dbc.Col([
-                      dcc.Graph(figure=figs[1]),
-                  ], width=6), 
-
-              ], align='justify'),
-            ])
-        elif len(figs) == 3:
-          mdiv.extend([
-              html.H3(f"Unit: {unit}",
-                      className=UnitFlows.Formatting()),
-
-              dbc.Row([
-                  dbc.Col([
-                      dcc.Graph(figure=figs[0]),
-                  ], width=4),
-                  dbc.Col([
-                      dcc.Graph(figure=figs[1]),
-                  ], width=4), 
-                  dbc.Col([
-                      dcc.Graph(figure=figs[2]),
-                  ], width=4), 
-
-              ], align='justify'),
-            ])
-              
+        mdiv.extend([
+          html.H3(f"Unit: {unit}", className=UnitFlows.Formatting()),
+          dbc.Row(
+              [
+                dbc.Col(
+                    [dcc.Graph(figure=figs[i])],
+                    width=12 // len(figs)
+                ) for i in range(len(figs))
+              ],
+              align='justify'
+            )
+        ])
+                
       return (basis, mdiv)
       
 
