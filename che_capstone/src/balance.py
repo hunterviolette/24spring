@@ -69,9 +69,9 @@ class Balance(UnitConversion):
     cfg = self.c
 
     tf = cfg["Basis"]["Target Flow"].split(" ")
+    targetFlow = self.q(float(tf[0]), tf[1])
 
     targetCompound = cfg["Basis"]["Target Compound"]
-    targetFlow = self.q(float(tf[0]), tf[1])
     targetMW = self.q(self.subs[targetCompound].mass, 'gram/mol')
     targetStoich = float(cfg["Basis"]["Overall Reaction"][targetCompound]["stoich"])
 
@@ -105,13 +105,9 @@ class Balance(UnitConversion):
     print(df)
     self.mb, self.targetCompound, self.targetFlow = df, targetCompound, targetFlow
 
-  def ClosedBalance(self):
-    pass
-
 if __name__ == "__main__":
   #y = Air.MassPercent("N2")
   #print(y)
 
   x = Balance()
-
   x.MaterialBalance()

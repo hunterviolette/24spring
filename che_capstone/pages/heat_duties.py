@@ -63,12 +63,10 @@ class Flows(DashUtil, Preprocessing):
       ))
     
     return html.Div([
-
-      Flows.DarkDashTable(self.heat_flows.round(3)),
       
       dcc.Graph(
         figure=fig.update_layout(
-                    title=f"Heat Flows by Unit",
+                    title=f"Heat Duty by Unit",
                     xaxis_title='Number of iterations',
                     yaxis_title=col,
                     annotations=Flows.FigAnnotations(df, "Iteration", col),
@@ -82,7 +80,9 @@ class Flows(DashUtil, Preprocessing):
           title="Positive and Negative Utility by Iteration for Reactors/Electrolyzers",
           xaxis_title="Iteration",
           yaxis_title="Utility (kW)"
-      ))
+      )),
+
+      Flows.DarkDashTable(self.heat_flows.round(3)),
 
     ], className='mb-4', style=Flows.Formatting('mdiv'))
   

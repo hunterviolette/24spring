@@ -61,46 +61,7 @@ class SinglePass(Balance, Therm):
         uo = cfg["Units"][unit]
         conv = min(float(uo["conversion"]), 1) if "conversion" in uo else 1
 
-        # variable flow rate dependent sources  
-        for k,v in uo["depends_on"].items():
-          dcomp = v["dependent compound"]
-
-          state_dict = pstate["Units"] if v["state"] <0 and itr>0 else cfg["Units"]
-
-          dn = state_dict.get(k, {}).get("flow", {}).get("products", {}
-                        ).get(dcomp, {}).get(self.cols["n"], 0)
-
-        
-          comp, stoich = v["compound"], v["stoich"]
-          cf = uo["flow"]["reagents"].get(comp, {}).get(self.cols["n"], 0)
-          n = dn * stoich + cf
-
-          m = (self.q(n, 'kmol/batch') * 
-                      self.q(self.subs[comp].mass, 'g/mol')
-                    ).to("kg/batch")
-
-          if verbose: print(" ".join([
-                  f"getting dependent flows from {k} from {dcomp},",
-                  f"got {dn:.2f} {self.cols['n']} with stoich {stoich},",
-                  f"{comp} is {n:.2f} {self.cols['n']}"
-                ]))
-          
-          if comp == "N2":
-            n /= Air.n2frac
-
-            airFracs = Air.AirFrac()
-            for comp in airFracs.keys():
-
-              uo["flow"]["reagents"][comp] = {
-                    self.cols["n"]: (n) * airFracs[comp],
-                  }
-          else:
-            uo["flow"]["reagents"][comp] = {
-                    self.cols["n"]: n,
-                    self.cols["m"]: m.magnitude,
-                  }
-
-        # 0 stage, get initial reagent flows on Basis Compound/flow   
+        # stage==0 and itr==0, get initial reagent flows from balance.py 
         if stage == str(0) and itr == 0:  
           
           if "PSA" in unit: uops = uo["seperation"]["reagents"]
@@ -127,7 +88,7 @@ class SinglePass(Balance, Therm):
                     self.cols["m"]: m,
                   }
 
-        # stage>0 and itr>0 stages, get reagent flows from input/recycle unit               
+        # stage>0 and itr>0 stages, get reagent flows from input/recycle units          
         else:
           if not "PSA" in unit: p = "reaction"
           else: p = "seperation"
@@ -184,7 +145,46 @@ class SinglePass(Balance, Therm):
                         self.cols["m"]: m + uo["flow"]["reagents"
                                               ].get(comp, {}).get(self.cols["m"], 0)
                       }
-                            
+
+        # dependent flow rates    
+        for k,v in uo["depends_on"].items():
+          dcomp = v["dependent compound"]
+
+          state_dict = pstate["Units"] if v["state"] <0 and itr>0 else cfg["Units"]
+
+          dn = state_dict.get(k, {}).get("flow", {}).get("products", {}
+                        ).get(dcomp, {}).get(self.cols["n"], 0)
+
+        
+          comp, stoich = v["compound"], v["stoich"]
+          cf = uo["flow"]["reagents"].get(comp, {}).get(self.cols["n"], 0)
+          n = dn * stoich + cf
+
+          m = (self.q(n, 'kmol/batch') * 
+                      self.q(self.subs[comp].mass, 'g/mol')
+                    ).to("kg/batch")
+
+          if verbose: print(" ".join([
+                  f"getting dependent flows from {k} from {dcomp},",
+                  f"got {dn:.2f} {self.cols['n']} with stoich {stoich},",
+                  f"{comp} is {n:.2f} {self.cols['n']}"
+                ]))
+          
+          if comp == "N2":
+            n /= Air.n2frac
+
+            airFracs = Air.AirFrac()
+            for comp in airFracs.keys():
+
+              uo["flow"]["reagents"][comp] = {
+                    self.cols["n"]: (n) * airFracs[comp],
+                  }
+          else:
+            uo["flow"]["reagents"][comp] = {
+                    self.cols["n"]: n,
+                    self.cols["m"]: m.magnitude,
+                  }
+
         # Do reaction
         if not "PSA" in unit:
           if uo["flow"]["reagents"].keys() == uo["reaction"]["reagents"].keys():
@@ -285,6 +285,7 @@ class SinglePass(Balance, Therm):
   def FlowFeatures(self, itr):
     #SinglePass.ThermalProperties(self)
     SinglePass.Reactor_Q(self)
+    SinglePass.Electrolysis_Q(self)
 
     with open(f'states/iter_{itr}.json', 'w') as js:
         json.dump(self.c, js, indent=4)

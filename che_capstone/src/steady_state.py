@@ -26,7 +26,10 @@ class SteadyState(SinglePass):
       SteadyState.IterFlows(self, True, iter, excess, True)
       SteadyState.FlowFeatures(self, iter)
       
-      pathing = ["Units", "R-103", "flow", "products", self.targetCompound, self.cols["m"]]
+      tuPath = ["Basis", "Overall Reaction", self.targetCompound, "unit"]
+      targetUnit = reduce(lambda d, k: d[k], tuPath, self.c)
+
+      pathing = ["Units", targetUnit, "flow", "products", self.targetCompound, self.cols["m"]]
       flow = self.q(reduce(lambda d, k: d[k], pathing, self.c), 'kg/batch')
 
       if iter>0:
@@ -39,28 +42,28 @@ class SteadyState(SinglePass):
       
       if iter >= self.maxIter: break
     
-  def Steady_State_Setpoint(self):
+  def Steady_State_Setpoint(self, excess:float=1):
 
     for iter in range(self.maxIter):
       [os.remove(f"./states/{x}") for x in os.listdir('./states')]
+      
+      SteadyState.Steady_State_Flow(self, excess)
+      if hasattr(self, 'ssflow'):
+        print(f"{iter} Iteration converging steady-state flows at",
+              f" {self.ssflow.to('mtpd').__round__(7)}")
 
-      print(f"{iter} Iteration converging steady state flows at {self.targetFlow}")
+        ssFlow = self.ssflow.to('mtpd').__round__(7) # calculated ss-flow
+        spFlow = self.targetFlow.to('mtpd') # desired ss-flow
 
-      if iter == 0: SteadyState.Steady_State_Flow(self)
-      else:
-        ssFlow = self.ssflow.to('mtpd').__round__(3)
-        if not np.isclose(ssFlow, self.targetFlow, atol=0.0001 * self.targetFlow):
-          e = (self.targetFlow/ssFlow).magnitude + .0005
-          SteadyState.Steady_State_Flow(self, excess=e)
-        else:
+        if not np.isclose(ssFlow, spFlow, atol=0.0001 * spFlow.magnitude):
+          excess = (spFlow/ssFlow).magnitude + .0005
+        else: 
           print(f"Converged setpoint to target flow after {iter} iterations")
-          SteadyState.Steady_State_Flow(self, excess=e)
           break
-
-      if iter >= self.maxIter: break
+      elif not hasattr(self, 'ssFlow') and iter>0: 
+        print(f"Could not find steady-state after {self.maxIter} iterations")
+        break
         
-    print(self.ssflow.to('mtpd'), self.targetFlow)
-
 if __name__ == "__main__":
   SteadyState().Steady_State_Flow()
 

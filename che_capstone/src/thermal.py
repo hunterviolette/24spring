@@ -277,29 +277,6 @@ class Therm(UnitConversion):
             "overall": dH
         }
 
-  def Q_Mixture(self, col: str = "Flow (kmol/20-min-batch)"):
-    Therm.dH_Mixture(self, col)
-    cfg = self.c
-
-    for unit in [x for x in cfg["Units"].keys()
-                if x.split("-")[0] in ["R"]]:
-      
-      uo = cfg["Units"][unit]
-
-      if len(uo["reaction"]["reagents"].keys()) == 1: 
-              reagent = next(iter(uo["reaction"]["reagents"]))
-      else: reagent = uo["limiting_reagent"]
-
-      conv = float(uo["conversion"])
-      if conv >1: conv = 1
-      
-      n = self.q(uo["flow"]["reagents"][reagent][col], 'kmol/batch')
-      heatRxn = self.q(uo["reaction"]["heat of reaction (kJ/mol)"], 'kJ/mol')
-
-      uo["reaction"]["reaction duty (kJ/20-min-batch)"] = (
-        (conv * n * heatRxn).to('kJ/batch').magnitude
-      )
-  
   def HeatRxn(self):
     Therm.__thermdata__(self, './src/data')
     cfg = self.c
@@ -352,10 +329,8 @@ class Therm(UnitConversion):
   def Reactor_Q(self):
     Therm.dH_Mixture(self)
     Therm.HeatRxn(self)
-    Therm.Electrolysis_Q(self)
     
     cfg = self.c
-
     for unit in [x for x in cfg["Units"].keys()
                 if x.split("-")[0] in ["R"]]:
       

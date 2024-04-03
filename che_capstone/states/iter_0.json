@@ -85,23 +85,23 @@
                     "Cl2": 1,
                     "Mg": 1
                 },
-                "Utility (kW)": 1770.4523757489465
+                "Utility (kW)": 1770.3994406764227
             },
             "flow": {
                 "reagents": {
                     "MgCl2": {
-                        "Flow (kmol/batch)": 3.6698891671664167,
-                        "Flow (kg/batch)": 349.40017759870057
+                        "Flow (kmol/batch)": 3.669779440493234,
+                        "Flow (kg/batch)": 349.38973082024194
                     }
                 },
                 "products": {
                     "Cl2": {
-                        "Flow (kmol/batch)": 3.6698891671664167,
-                        "Flow (kg/batch)": 260.19514195209894
+                        "Flow (kmol/batch)": 3.669779440493234,
+                        "Flow (kg/batch)": 260.1873623309703
                     },
                     "Mg": {
-                        "Flow (kmol/batch)": 3.6698891671664167,
-                        "Flow (kg/batch)": 89.19665620797976
+                        "Flow (kmol/batch)": 3.669779440493234,
+                        "Flow (kg/batch)": 89.19398930118805
                     }
                 },
                 "side": {}
@@ -152,36 +152,36 @@
             "flow": {
                 "reagents": {
                     "N2": {
-                        "Flow (kmol/batch)": 1.2232951657590831
+                        "Flow (kmol/batch)": 1.2232585902379312
                     },
                     "O2_air": {
-                        "Flow (kmol/batch)": 0.32818088930783185
+                        "Flow (kmol/batch)": 0.32817107696867237
                     },
                     "Ar_air": {
-                        "Flow (kmol/batch)": 0.01463316706991526
+                        "Flow (kmol/batch)": 0.014632729550233446
                     },
                     "CO2_air": {
-                        "Flow (kmol/batch)": 0.0005483520850610644
+                        "Flow (kmol/batch)": 0.0005483356897839086
                     }
                 },
                 "products": {
                     "N2": {
-                        "Flow (kmol/batch)": 1.2232951657590831,
-                        "Flow (kg/batch)": 34.269390773574955
+                        "Flow (kmol/batch)": 1.2232585902379312,
+                        "Flow (kg/batch)": 34.2683661469254
                     }
                 },
                 "side": {
                     "Ar_air": {
-                        "Flow (kmol/batch)": 0.01463316706991526,
-                        "Flow (kg/batch)": 0.5845950244431147
+                        "Flow (kmol/batch)": 0.014632729550233446,
+                        "Flow (kg/batch)": 0.5845775455318262
                     },
                     "CO2_air": {
-                        "Flow (kmol/batch)": 0.0005483520850610644,
-                        "Flow (kg/batch)": 0.024132426911452384
+                        "Flow (kmol/batch)": 0.0005483356897839086,
+                        "Flow (kg/batch)": 0.024131705371700035
                     },
                     "O2_air": {
-                        "Flow (kmol/batch)": 0.32818088930783185,
-                        "Flow (kg/batch)": 10.501132096072004
+                        "Flow (kmol/batch)": 0.32817107696867237,
+                        "Flow (kg/batch)": 10.50081812084358
                     }
                 }
             }
@@ -228,36 +228,36 @@
                     "reagents": -285.825
                 },
                 "Overall Molar Heat (kJ/mol)": 96.73160141607232,
-                "Limiting Reagent Flow (kmol/batch)": 3.6698891671664167,
-                "Utility (kW)": 295.8285467995862
+                "Limiting Reagent Flow (kmol/batch)": 3.669779440493234,
+                "Utility (kW)": 295.819701768907
             },
             "flow": {
                 "reagents": {
-                    "H2O": {
-                        "Flow (kmol/batch)": 3.6698891671664167,
-                        "Flow (kg/batch)": 66.113053346503
-                    },
                     "Cl2": {
-                        "Flow (kmol/batch)": 3.6698891671664167,
-                        "Flow (kg/batch)": 260.19514195209894
+                        "Flow (kmol/batch)": 3.669779440493234,
+                        "Flow (kg/batch)": 260.1873623309703
+                    },
+                    "H2O": {
+                        "Flow (kmol/batch)": 3.669779440493234,
+                        "Flow (kg/batch)": 66.11107662048562
                     }
                 },
                 "products": {
                     "O2": {
-                        "Flow (kmol/batch)": 1.7431973544040478,
-                        "Flow (kg/batch)": 55.77882894622072
+                        "Flow (kmol/batch)": 1.7431452342342861,
+                        "Flow (kg/batch)": 55.77716120502869
                     },
                     "HCl": {
-                        "Flow (kmol/batch)": 6.972789417616191,
-                        "Flow (kg/batch)": 254.21395658745112
+                        "Flow (kmol/batch)": 6.9725809369371445,
+                        "Flow (kg/batch)": 254.20635579885445
                     },
                     "Cl2": {
-                        "Flow (kmol/batch)": 0.18349445835832098,
-                        "Flow (kg/batch)": 13.00975709760496
+                        "Flow (kmol/batch)": 0.18348897202466186,
+                        "Flow (kg/batch)": 13.009368116548528
                     },
                     "H2O": {
-                        "Flow (kmol/batch)": 0.18349445835832098,
-                        "Flow (kg/batch)": 3.3056526673251527
+                        "Flow (kmol/batch)": 0.18348897202466186,
+                        "Flow (kg/batch)": 3.305553831024284
                     }
                 },
                 "side": {}
@@ -298,32 +298,32 @@
                     "reagents": 0.0
                 },
                 "Overall Molar Heat (kJ/mol)": -227.65310201867865,
-                "Limiting Reagent Flow (kmol/batch)": 3.6698891671664167,
-                "Utility (kW)": -696.2180441418167
+                "Limiting Reagent Flow (kmol/batch)": 3.669779440493234,
+                "Utility (kW)": -696.1972277938797
             },
             "flow": {
                 "reagents": {
                     "Mg": {
-                        "Flow (kmol/batch)": 3.6698891671664167,
-                        "Flow (kg/batch)": 89.19665620797976
+                        "Flow (kmol/batch)": 3.669779440493234,
+                        "Flow (kg/batch)": 89.19398930118805
                     },
                     "N2": {
-                        "Flow (kmol/batch)": 1.2232951657590831,
-                        "Flow (kg/batch)": 34.269390773574955
+                        "Flow (kmol/batch)": 1.2232585902379312,
+                        "Flow (kg/batch)": 34.2683661469254
                     }
                 },
                 "products": {
                     "Mg3N2": {
-                        "Flow (kmol/batch)": 0.9786371112443778,
-                        "Flow (kg/batch)": 98.7728650007838
+                        "Flow (kmol/batch)": 0.9786078507981957,
+                        "Flow (kg/batch)": 98.76991177321108
                     },
                     "Mg": {
-                        "Flow (kmol/batch)": 0.7339778334332832,
-                        "Flow (kg/batch)": 17.839331241595946
+                        "Flow (kmol/batch)": 0.7339558880986466,
+                        "Flow (kg/batch)": 17.838797860237605
                     },
                     "N2": {
-                        "Flow (kmol/batch)": 0.24465903315181659,
-                        "Flow (kg/batch)": 6.853878154714989
+                        "Flow (kmol/batch)": 0.24465171804758618,
+                        "Flow (kg/batch)": 6.853673229385079
                     }
                 },
                 "side": {}
@@ -359,32 +359,32 @@
             "flow": {
                 "reagents": {
                     "HCl": {
-                        "Flow (kmol/batch)": 6.972789417616191,
-                        "Flow (kg/batch)": 254.21395658745112
+                        "Flow (kmol/batch)": 6.9725809369371445,
+                        "Flow (kg/batch)": 254.20635579885445
                     },
                     "O2": {
-                        "Flow (kmol/batch)": 1.7431973544040478,
-                        "Flow (kg/batch)": 55.77882894622072
+                        "Flow (kmol/batch)": 1.7431452342342861,
+                        "Flow (kg/batch)": 55.77716120502869
                     },
                     "H2O": {
-                        "Flow (kmol/batch)": 0.18349445835832098,
-                        "Flow (kg/batch)": 3.3056526673251527
+                        "Flow (kmol/batch)": 0.18348897202466186,
+                        "Flow (kg/batch)": 3.305553831024284
                     }
                 },
                 "products": {
                     "HCl": {
-                        "Flow (kmol/batch)": 6.972789417616191,
-                        "Flow (kg/batch)": 254.21395658745112
+                        "Flow (kmol/batch)": 6.9725809369371445,
+                        "Flow (kg/batch)": 254.20635579885445
                     }
                 },
                 "side": {
                     "O2": {
-                        "Flow (kmol/batch)": 1.7431973544040478,
-                        "Flow (kg/batch)": 55.77882894622072
+                        "Flow (kmol/batch)": 1.7431452342342861,
+                        "Flow (kg/batch)": 55.77716120502869
                     },
                     "H2O": {
-                        "Flow (kmol/batch)": 0.18349445835832098,
-                        "Flow (kg/batch)": 3.3056526673251527
+                        "Flow (kmol/batch)": 0.18348897202466186,
+                        "Flow (kg/batch)": 3.3055538310242834
                     }
                 }
             },
@@ -416,24 +416,24 @@
             "flow": {
                 "reagents": {
                     "HCl": {
-                        "Flow (kmol/batch)": 1.394557883523238,
-                        "Flow (kg/batch)": 50.84279131749021
+                        "Flow (kmol/batch)": 1.3945161873874286,
+                        "Flow (kg/batch)": 50.841271159770876
                     },
                     "NH3": {
-                        "Flow (kmol/batch)": 1.5658193779910046,
-                        "Flow (kg/batch)": 26.667469826564798
+                        "Flow (kmol/batch)": 1.5657725612771132,
+                        "Flow (kg/batch)": 26.666672491110514
                     }
                 },
                 "products": {
                     "NH3": {
-                        "Flow (kmol/batch)": 1.5658193779910046,
-                        "Flow (kg/batch)": 26.667469826564798
+                        "Flow (kmol/batch)": 1.5657725612771132,
+                        "Flow (kg/batch)": 26.666672491110514
                     }
                 },
                 "side": {
                     "HCl": {
-                        "Flow (kmol/batch)": 1.394557883523238,
-                        "Flow (kg/batch)": 50.84279131749022
+                        "Flow (kmol/batch)": 1.3945161873874286,
+                        "Flow (kg/batch)": 50.841271159770876
                     }
                 }
             },
@@ -479,36 +479,36 @@
                     "reagents": -1020.3374553000001
                 },
                 "Overall Molar Heat (kJ/mol)": -1127.2558305720186,
-                "Limiting Reagent Flow (kmol/batch)": 0.9786371112443778,
-                "Utility (kW)": -919.311991386985
+                "Limiting Reagent Flow (kmol/batch)": 0.9786078507981957,
+                "Utility (kW)": -919.2845047131817
             },
             "flow": {
                 "reagents": {
                     "Mg3N2": {
-                        "Flow (kmol/batch)": 0.9786371112443778,
-                        "Flow (kg/batch)": 98.7728650007838
+                        "Flow (kmol/batch)": 0.9786078507981957,
+                        "Flow (kg/batch)": 98.76991177321108
                     },
                     "HCl": {
-                        "Flow (kmol/batch)": 6.972789417616191,
-                        "Flow (kg/batch)": 254.21395658745112
+                        "Flow (kmol/batch)": 6.9725809369371445,
+                        "Flow (kg/batch)": 254.20635579885445
                     }
                 },
                 "products": {
                     "NH3": {
-                        "Flow (kmol/batch)": 1.5658193779910046,
-                        "Flow (kg/batch)": 26.667469826564798
+                        "Flow (kmol/batch)": 1.5657725612771132,
+                        "Flow (kg/batch)": 26.666672491110514
                     },
                     "MgCl2": {
-                        "Flow (kmol/batch)": 2.348729066986507,
-                        "Flow (kg/batch)": 223.61075082245043
+                        "Flow (kmol/batch)": 2.34865884191567,
+                        "Flow (kg/batch)": 223.6040650445814
                     },
                     "Mg3N2": {
-                        "Flow (kmol/batch)": 0.19572742224887552,
-                        "Flow (kg/batch)": 19.754573000156753
+                        "Flow (kmol/batch)": 0.1957215701596391,
+                        "Flow (kg/batch)": 19.75398235464221
                     },
                     "HCl": {
-                        "Flow (kmol/batch)": 1.394557883523238,
-                        "Flow (kg/batch)": 50.84279131749021
+                        "Flow (kmol/batch)": 1.3945161873874286,
+                        "Flow (kg/batch)": 50.841271159770876
                     }
                 },
                 "side": {}
