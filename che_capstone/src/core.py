@@ -60,6 +60,7 @@ class SinglePass(Balance, Therm):
 
         uo = cfg["Units"][unit]
         conv = min(float(uo["conversion"]), 1) if "conversion" in uo else 1
+        uo["execution stage"] = stage
 
         # stage==0 and itr==0, get initial reagent flows from balance.py 
         if stage == str(0) and itr == 0:  

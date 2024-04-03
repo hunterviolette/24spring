@@ -206,7 +206,7 @@ class Preprocessing:
 
   def UnitFlowsV2(self):
     Preprocessing.JSON_to_Pandas(self)
-    df = self.unitdf[["Unit", "flow", "iteration"]]
+    df = self.unitdf[["Unit", "flow", "iteration", 'execution stage']]
 
     mdf = pd.DataFrame()
     for unit, unit_data in df.groupby("Unit"):
@@ -219,6 +219,7 @@ class Preprocessing:
                         mdf, 
                         pd.DataFrame({
                             "Unit": [unit],
+                            "Stage": [unit_data["execution stage"].iloc[0]],
                             "Iteration": [iteration],
                             "Stream Type": [stream_type],
                             "Chemical": [chem],
@@ -227,7 +228,7 @@ class Preprocessing:
                         ], ignore_index=True)
 
     self.flows = mdf.groupby(
-              ['Unit', 'Iteration', 'Stream Type', 'Chemical'], 
+              ['Unit', 'Stage', 'Iteration', 'Stream Type', 'Chemical'], 
               as_index=False
             ).first(
             ).astype({"Iteration": int})

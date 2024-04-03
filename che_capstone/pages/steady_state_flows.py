@@ -49,53 +49,57 @@ class UnitFlows(DashUtil, Preprocessing):
       df = self.flows.round(5).sort_values("Iteration")
       mdiv = []
 
-      for unit in [x for x in df["Unit"].unique()]:
+      for stage in sorted(df["Stage"].unique()):
+        for unit in df.loc[df["Stage"] == stage]["Unit"].unique():
         
-        figs = []
-        for stream in df.loc[(df["Unit"] == unit)]["Stream Type"].unique():
-          d = df.loc[(df["Stream Type"] == stream) & (df["Unit"] == unit)].copy()
-
-          if not d.empty:
-
-            numChems = {chem: i for i, chem in enumerate(d['Chemical'].unique())}
-            d['Chemical_numeric'] = d['Chemical'].map(numChems)
-
-            fig = go.Figure()
-            for chem, chem_num in numChems.items():
-                chem_data = d[d['Chemical'] == chem]
-                fig.add_trace(go.Scatter(
-                    x=chem_data['Iteration'], 
-                    y=chem_data[col], 
-                    mode='markers+lines', 
-                    marker=dict(color=chem_num),
-                    name=chem
-                ))
+          figs = []
+          for stream in sorted(
+            df.loc[df["Unit"] == unit]["Stream Type"].unique(), 
+            key=lambda x: {"reagents": 0, "products": 1, "side": 2}.get(x, 'N/A')
+          ):
             
-            
-            figs.append(
-                fig.update_layout(
-                  title=f"Stream: {stream}",
-                  xaxis_title='Number of iterations',
-                  yaxis_title=col,
-                  annotations=UnitFlows.FigAnnotations(d, "Iteration", col),
-                  showlegend=True, 
-                  legend_title='Compound', 
-                  margin=dict(l=0, r=0, t=30, b=0)
+            d = df.loc[(df["Stream Type"] == stream) & (df["Unit"] == unit)].copy()
+
+            if not d.empty:
+              numChems = {chem: i for i, chem in enumerate(d['Chemical'].unique())}
+              d['Chemical_numeric'] = d['Chemical'].map(numChems)
+
+              fig = go.Figure()
+              for chem, chem_num in numChems.items():
+                  chem_data = d[d['Chemical'] == chem]
+                  fig.add_trace(go.Scatter(
+                      x=chem_data['Iteration'], 
+                      y=chem_data[col], 
+                      mode='markers+lines', 
+                      marker=dict(color=chem_num),
+                      name=chem
+                  ))
+              
+              figs.append(
+                  fig.update_layout(
+                    title=f"Stream: {stream}",
+                    xaxis_title='Number of iterations',
+                    yaxis_title=col,
+                    annotations=UnitFlows.FigAnnotations(d, "Iteration", col),
+                    showlegend=True, 
+                    legend_title='Compound', 
+                    margin=dict(l=0, r=0, t=30, b=0)
+                  )
                 )
-              )
-            
-        mdiv.extend([
-          html.H3(f"Unit: {unit}", className=UnitFlows.Formatting()),
-          dbc.Row(
-              [
-                dbc.Col(
-                    [dcc.Graph(figure=figs[i])],
-                    width=12 // len(figs)
-                ) for i in range(len(figs))
-              ],
-              align='justify'
-            )
-        ])
+              
+          if figs: 
+            mdiv.extend([
+              html.H3(f"Unit: {unit}", className=UnitFlows.Formatting()),
+              dbc.Row(
+                  [
+                    dbc.Col(
+                        [dcc.Graph(figure=figs[i])],
+                        width=12 // len(figs)
+                    ) for i in range(len(figs))
+                  ],
+                  align='justify'
+                )
+            ])
                 
       return (basis, mdiv)
       

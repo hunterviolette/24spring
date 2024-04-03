@@ -107,7 +107,8 @@
                 "side": {}
             },
             "source": {},
-            "depends_on": {}
+            "depends_on": {},
+            "execution stage": "0"
         },
         "PSA-101": {
             "temperature": "293 K",
@@ -184,7 +185,8 @@
                         "Flow (kg/batch)": 8.750681767656394
                     }
                 }
-            }
+            },
+            "execution stage": "0"
         },
         "R-101": {
             "temperature": "1000 K",
@@ -261,7 +263,8 @@
                     }
                 },
                 "side": {}
-            }
+            },
+            "execution stage": "1"
         },
         "R-102": {
             "temperature": "1100 K",
@@ -329,7 +332,8 @@
                 "side": {}
             },
             "source": {},
-            "depends_on": {}
+            "depends_on": {},
+            "execution stage": "1"
         },
         "PSA-102": {
             "temperature": "1000 K",
@@ -389,7 +393,8 @@
                 }
             },
             "source": {},
-            "depends_on": {}
+            "depends_on": {},
+            "execution stage": "2"
         },
         "PSA-103": {
             "temperature": "920 K",
@@ -438,7 +443,8 @@
                 }
             },
             "source": {},
-            "depends_on": {}
+            "depends_on": {},
+            "execution stage": "4"
         },
         "R-103": {
             "temperature": "1100 K",
@@ -514,7 +520,8 @@
                 "side": {}
             },
             "source": {},
-            "depends_on": {}
+            "depends_on": {},
+            "execution stage": "3"
         }
     }
 }
