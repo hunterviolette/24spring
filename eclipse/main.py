@@ -12,56 +12,51 @@ class Eclipse:
     pass
 
   def DataGen(self, input_dir: str = './cr2_data', skip: int = 2):
-      self.imgs = {}
+    self.imgs = {}
 
-      files = [x for x in os.listdir(input_dir) if x.lower().endswith('.cr2')]
-      for i, file_name in enumerate(files):
-        if i % skip == 0:
-          file_path = os.path.join(input_dir, file_name)
-          
-          metadata = pyexiv2.Image(file_path).read_exif()
-                            
-          name = file_name.split(".")[0]
-          self.imgs[name] = {
-              'frame': rawpy.imread(file_path).postprocess(),
-              "exposure": eval(metadata['Exif.Photo.ExposureTime'])
-          }
+    files = [x for x in os.listdir(input_dir) if x.lower().endswith('.cr2')]
+    for i, file_name in enumerate(files):
+      if i % skip == 0:
+        file_path = os.path.join(input_dir, file_name)
+        
+        metadata = pyexiv2.Image(file_path).read_exif()
+                          
+        name = file_name.split(".")[0]
+        self.imgs[name] = {
+            'frame': rawpy.imread(file_path).postprocess(),
+            "exposure": eval(metadata['Exif.Photo.ExposureTime'])
+        }
 
   def Write_HDR(self):
-    Eclipse.DataGen(self, skip=4)
+    self.DataGen(skip=3)
 
-    frames, exposures = [], []
+    frames, pre_exposures = [], []
     for k, v in self.imgs.items():
       frames.append(v["frame"])
-      exposures.append(v["exposure"])
+      pre_exposures.append(v["exposure"])
 
       imwrite(f"tif_data/{k}.tif", v["frame"])
 
-    if hasattr(self, 'imgs'):
-      if self.imgs:
-        alignMTB = cv2.createAlignMTB()
-        alignMTB.process(frames, frames)
+    if hasattr(self, 'imgs') and self.imgs:
+      exposures = np.array(pre_exposures, dtype=np.float32)
 
-        # Create HDR image
-        mergeDebevec = cv2.createMergeDebevec()
-        hdr = mergeDebevec.process(
-                            frames, 
-                            cv2.UMat(np.array(exposures, dtype=np.float32))
-                          )
+      calibrate = cv2.createCalibrateDebevec()
+      response = calibrate.process(frames, exposures)
+      merge_debevec = cv2.createMergeDebevec()
+    
+      hdr = merge_debevec.process(frames, exposures, response)
+      tonemap = cv2.createTonemap(2.2)
+      
+      ldr = tonemap.process(hdr)
+      ldr_np = np.clip(ldr * 255, 0, 255).astype(np.uint8)
 
-        cv2.imwrite('export.hdr', hdr)
+      merge_mertens = cv2.createMergeMertens()
+      fusion = merge_mertens.process(frames)
 
-  def Plot_HDR(self):
-    hdr_image = cv2.imread('exp.hdr', cv2.IMREAD_ANYDEPTH | cv2.IMREAD_COLOR)
-
-    if hdr_image is not None:
-      plt.imshow(cv2.cvtColor(hdr_image, cv2.COLOR_BGR2RGB))
-      plt.title('HDR Image')
-      plt.axis('off')
-      plt.show()
+      cv2.imwrite('fusion.png', fusion * 255)
+      cv2.imwrite('ldr.png', ldr_np)
+      cv2.imwrite('hdr.hdr', hdr)
 
 if __name__ == "__main__":
   x = Eclipse()
   x.Write_HDR()
-
-
