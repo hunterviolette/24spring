@@ -37,10 +37,6 @@ class Eclipse:
 
       imwrite(f"tif_data/{k}.tif", v["frame"])
 
-
-    print(exposures, sep='\n')
-    print(np.array(exposures, dtype=np.float32))
-
     if hasattr(self, 'imgs'):
       if self.imgs:
         alignMTB = cv2.createAlignMTB()
@@ -53,7 +49,6 @@ class Eclipse:
                             cv2.UMat(np.array(exposures, dtype=np.float32))
                           )
 
-        # Save the HDR image as OpenEXR format
         cv2.imwrite('export.hdr', hdr)
 
   def Plot_HDR(self):
