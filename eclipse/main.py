@@ -5,58 +5,92 @@ import rawpy
 from tifffile import imwrite, imread
 import pyexiv2
 import matplotlib.pyplot as plt
+import itertools
 
 class Eclipse:
   
   def __init__(self) -> None:
     pass
 
-  def DataGen(self, input_dir: str = './cr2_data', skip: int = 2):
+  def DataGen(self, input_dir: str = './cr2_cut', skip: int = 2):
+    
     self.imgs = {}
-
-    files = [x for x in os.listdir(input_dir) if x.lower().endswith('.cr2')]
-    for i, file_name in enumerate(files):
+    for i, file in enumerate([
+        x for x in os.listdir(input_dir) 
+        if x.lower().endswith('.cr2')
+        ]):
+      
       if i % skip == 0:
-        file_path = os.path.join(input_dir, file_name)
-        
+
+        file_path = os.path.join(input_dir, file)
         metadata = pyexiv2.Image(file_path).read_exif()
-                          
-        name = file_name.split(".")[0]
-        self.imgs[name] = {
-            'frame': rawpy.imread(file_path).postprocess(),
-            "exposure": eval(metadata['Exif.Photo.ExposureTime'])
+
+        print(f"loaded {file}")                  
+        self.imgs[file.split(".")[0]] = {
+          'frame': rawpy.imread(file_path).postprocess(),
+          "exposure": eval(metadata['Exif.Photo.ExposureTime'])
         }
 
-  def Write_HDR(self):
-    self.DataGen(skip=3)
+  def Write_HDR(self, 
+                  name: str , 
+                  type: str = "debevec", 
+                  gamma_correction: float = 1,
+                  tonemapping: bool = False,
+                  export_dir: str = './export'
+                ):
+  
+    if not hasattr(self, 'imgs'):
+      self.DataGen(skip=1)
 
-    frames, pre_exposures = [], []
+    images, pre_exposures = [], []
     for k, v in self.imgs.items():
-      frames.append(v["frame"])
+      images.append(v["frame"])
       pre_exposures.append(v["exposure"])
 
       imwrite(f"tif_data/{k}.tif", v["frame"])
 
-    if hasattr(self, 'imgs') and self.imgs:
-      exposures = np.array(pre_exposures, dtype=np.float32)
+    if hasattr(self, 'imgs'):
+      if self.imgs:
+        exposures = np.array(pre_exposures, dtype=np.float32)
 
-      calibrate = cv2.createCalibrateDebevec()
-      response = calibrate.process(frames, exposures)
-      merge_debevec = cv2.createMergeDebevec()
-    
-      hdr = merge_debevec.process(frames, exposures, response)
-      tonemap = cv2.createTonemap(2.2)
-      
-      ldr = tonemap.process(hdr)
-      ldr_np = np.clip(ldr * 255, 0, 255).astype(np.uint8)
+        if type.lower() == "mertens":
+          merge_mertens = cv2.createMergeMertens()
+          hdr = merge_mertens.process(images)
+        elif type.lower() == "robertson":
+          merge_robertson = cv2.createMergeRobertson()
+          hdr = merge_robertson.process(images, times=exposures.copy())
+        elif type.lower() == "debevec":
+          calibrate = cv2.createCalibrateDebevec()
+          response = calibrate.process(images, exposures)
 
-      merge_mertens = cv2.createMergeMertens()
-      fusion = merge_mertens.process(frames)
+          merge_debevec = cv2.createMergeDebevec()
+          hdr = merge_debevec.process(images, exposures.copy(), response)
+        else:
+          raise TypeError("Invalid HDR type")
 
-      cv2.imwrite('fusion.png', fusion * 255)
-      cv2.imwrite('ldr.png', ldr_np)
-      cv2.imwrite('hdr.hdr', hdr)
+        if tonemapping:
+          tonemap = cv2.createTonemap(gamma=2.2)
+          hdr = tonemap.process(hdr.copy())
+
+        if gamma_correction != 1:
+          # The functionality would be the same without this if statement, but not the performance.
+          hdr = (hdr/hdr.max()) ** gamma_correction * hdr.max()
+
+        cv2.imwrite(f'{export_dir}/{name}.hdr', hdr)
 
 if __name__ == "__main__":
   x = Eclipse()
-  x.Write_HDR()
+  x.DataGen('./cr2_cut', skip=1)
+  
+  for hdr_type, tm, g in itertools.product(
+                                    ['mertens'],#, 'robertson', 'debevec'], 
+                                    [False],#, True], 
+                                    np.linspace(3, 10, 8)
+                                  ):
+    
+    x.Write_HDR(
+      name="_".join([hdr_type, str(tm), str(g)]),
+      type=hdr_type,
+      gamma_correction=g,
+      tonemapping=tm
+    )
