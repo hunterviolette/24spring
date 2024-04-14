@@ -1,10 +1,16 @@
 # Basic implementation of a chemical process simulator using [Thermo](https://thermo.readthedocs.io/index.html#) and [ChemPy](https://bjodah.github.io/chempy/latest/)
+- Simulate chemical processes by writing a [config file](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
 
+## Simulator Classes
+1. [balance.py](https://github.com/hunterviolette/24spring/blob/main/che_capstone/src/balance.py): Generate material balance to generate initial flow rates for basis components
 
-## Simulate chemical processes by writing a [config file](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
-- Converges all flows to steady state from "Basis" key in [cfg.json](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
-- Overall heat duty calculation for reactors: ```Q (kJ/mol) = enthalpy_streams_out - enthalpy_streams_in + heat_of_reaction ```
-- The ground-work for equation of state calculations for pump/compressors, heat exchangers, and flashes using Thermo is mostly complete but not integrated
+2. [core.py](https://github.com/hunterviolette/24spring/blob/main/che_capstone/src/core.py): Backbone of simulator. Iterates over current and previous state to determine inlet and outlet flows of unit operations. 
+
+3. [steady_state.py](https://github.com/hunterviolette/24spring/blob/main/che_capstone/src/steady_state.py): Iterates over core, attempts convergence of flows at steady-state. If flows converge, iterate over starting flows until steady-state flow converges to steady-state set-point. 
+
+4. [thermal.py](https://github.com/hunterviolette/24spring/blob/main/che_capstone/src/thermal.py): Thermodynamic calculations of temperature and pressure dependent mixtures using equations of state to calculate heat of reaction, overall heat duty for adiabatic operation of reactors, and utility requirement of unit operations. 
+
+5. [unit_registry.py](https://github.com/hunterviolette/24spring/blob/main/che_capstone/src/unit_registry.py): Base class inherited for dimensional calculations. 
 
 ## Process Flow Diagrams (PFD)
 ### Overall PFD
