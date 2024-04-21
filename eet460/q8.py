@@ -50,7 +50,7 @@ class q8:
     # Calculate average power in the wind
     average_power = 0.5 * rho * v ** 3
 
-    q8.printr(average_power.to('W/m**2'), 2)
+    q8.printr(average_power.to('W/m**2') * 1.91, 2)
 
   def four(self):
     '''
@@ -58,27 +58,13 @@ class q8:
     at a wind velocity of 12 m/s. Estimate the maximum 
     theoretical power of this turbine. Assume an air density of 1.225 kg/m3.
     '''
-    wind_speed = self.q(12, 'm/s')
     blade_diameter = self.q(40, 'm')
-    air_density = self.q(1.225, 'kg/m^3')
+    rated_wind_speed = self.q(12, 'm/s')
+    air_density = self.q(1.225, 'kg/m**3')
 
-    # Calculate radius from diameter
     blade_radius = blade_diameter / 2
-
-    # Calculate angular velocity (omega) using rated power condition
-    rated_power_wind_speed = wind_speed
-    omega = (rated_power_wind_speed / blade_radius).to_base_units()
-
-    '''
-    # Calculate tip-speed ratio (TSR)
-    TSR = (omega * blade_radius) / wind_speed
-
-    # Calculate power coefficient (Cp)
-    Cp = (16 / 27) * (math.sin(TSR) / (1 - math.cos(TSR))) ** 2
-    '''
-
-    # Calculate maximum theoretical power
-    max_theoretical_power = 0.5 * air_density * math.pi * blade_radius ** 2 * wind_speed ** 3
+    swept_area = math.pi * blade_radius ** 2
+    max_theoretical_power = 0.5 * air_density * swept_area * rated_wind_speed ** 3
 
     q8.printr(max_theoretical_power.to('MW'))
 
