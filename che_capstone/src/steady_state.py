@@ -2,6 +2,7 @@
 import os
 import json
 import numpy as np
+import pandas as pd
 
 from functools import reduce
 
@@ -64,6 +65,46 @@ class SteadyState(SinglePass):
         print(f"Could not find steady-state after {self.maxIter} iterations")
         break
         
+  def CloseBalance(self, debug: bool=True):
+    flow = self.flows.loc[self.flows["Iteration"] == self.flows["Iteration"].max()]
+    
+    if debug:
+      path = max(os.listdir("./states"), key=lambda x: int(x.split("_")[-1].split(".")[0]))
+      with open(f"./states/{path}", "r") as f: cfg = json.load(f)
+    else: cfg = self.c
+
+    d = pd.DataFrame()
+    for k, v in cfg["Basis"]["Overall Reaction"].items():
+
+      flow = cfg["Units"][v["unit"]]["flow"]
+      flowIn = flow["reagents"].setdefault(k, {}).setdefault(self.cols["n"], 0)
+      flowOut = flow["products"].setdefault(k, {}).setdefault(self.cols["n"], 0)
+
+      d = pd.concat([d, 
+                    pd.DataFrame({
+                      "Component": [k],
+                      f"Stoich": [v["stoich"]],
+                      f"Reacted {self.cols['n']}": [abs(flowIn - flowOut)],
+                      f"Out {self.cols['n']}": [flowOut],
+                      f"In {self.cols['n']}": [flowIn],
+                    })])
+    
+    df = d.set_index('Component')
+    for comp in df.index:
+      stoich = abs(df.loc[comp, 'Stoich'])
+      flow = df.loc[comp, 'Reacted Flow (kmol/batch)']
+      
+      for dcomp in [x for x in df.index if x != comp]:
+        df.loc[comp, f'{dcomp} balance'] = (
+            flow / stoich * abs(df.loc[dcomp, 'Stoich']) 
+            - df.loc[dcomp, 'Reacted Flow (kmol/batch)']
+          ).__round__(3)
+            
+    self.ssbal = df.drop(columns=["In Flow (kmol/batch)", "Out Flow (kmol/batch)"]
+                  ).replace({0.000: True, -0.000: True})
+    
+    print('+'*10, flow, '+'*10, self.ssbal, sep='\n')
+
 if __name__ == "__main__":
   SteadyState().Steady_State_Flow()
 

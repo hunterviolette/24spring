@@ -112,6 +112,90 @@ class Preprocessing:
   def __init__(self) -> None:
     pass
 
+  def HtmlTables(self):
+    Preprocessing.Df_To_HTML(
+        self.mb.drop(columns=["Mass Flow (kg/h)",
+                              "Molecular Weight (grams/mol)", 
+                              "Component Flow (kmol/h)"]),
+        header="",
+        name="./assets/non_ss_balance"
+      )
+    
+    df = self.flows.assign(**{
+              "Flow (mtpd)": lambda x: x["Flow (kg/batch)"
+                ].apply(lambda y: self.q(y, 'kg/batch').to('mtpd').magnitude),
+              
+              "Stream Type": lambda x: x["Stream Type"
+                ].replace({"products": "outlet", "reagents": "inlet"})
+              })
+          
+    Preprocessing.Df_To_HTML(
+        self.ssbal,
+        header="",
+        name="./assets/ss_balance"
+      )
+    
+    Preprocessing.Df_To_HTML(
+        df,
+        header="",
+        name="./assets/iteration_table"
+      )
+    
+    Preprocessing.Df_To_HTML(
+        df.loc[
+            (df["Iteration"] == df["Iteration"].max()) 
+          ].pivot_table(
+            index=['Unit', 'Iteration', "Stream Type"], 
+            columns='Chemical', 
+            values='Flow (kg/batch)', 
+            fill_value=""
+        ), 
+        header="Inlet/Outlet flows for unit operations (kg/batch) at steady state",
+        name="./assets/ss_pass"
+      )
+
+    Preprocessing.Df_To_HTML(
+        df.loc[
+            (df["Iteration"] == df["Iteration"].min()) 
+          ].pivot_table(
+            index=['Unit', 'Iteration', "Stream Type"], 
+            columns='Chemical', 
+            values='Flow (kg/batch)', 
+            fill_value=""
+        ), 
+        header="Inlet/Outlet flows for unit operations (kg/batch) at first pass",
+        name="./assets/s0_pass"
+      )
+    
+    Preprocessing.Df_To_HTML(
+        df.loc[
+            (df["Iteration"] == df["Iteration"].max()) &
+            (df["Stream Type"] != "inlet")
+          ].pivot_table(
+              index=['Unit', 'Stream Type'], 
+              columns='Chemical', 
+              values='Flow (mtpd)', 
+              fill_value="", 
+        ), 
+        header="Outlet flows for unit operations (mtpd) at steady state",
+        name="./assets/outlet_ss"
+      )
+
+    Preprocessing.Df_To_HTML(
+        df.loc[
+            (df["Iteration"] == df["Iteration"].max()) &
+            (df["Stream Type"] == "inlet")
+          ].pivot_table(
+              index=['Unit', 'Stream Type'], 
+              columns='Chemical', 
+              values='Flow (mtpd)', 
+              fill_value="", 
+        ), 
+        header="Inlet flows for unit operations (mtpd) at steady state",
+        name="./assets/inlet_ss"
+      )
+
+
   @staticmethod
   def Df_To_HTML(df: pd.DataFrame,
                 header: str = "", 
