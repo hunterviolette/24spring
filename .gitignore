@@ -9,3 +9,7 @@ bmb_capstone/vol/models/*/
 che_capstone/src/tmp/*
 che_capstone/states/*
 che_capstone/src/*.json
+eclipse/cr2_data/*
+eclipse/tif_data/*
+eclipse/DeepHDR
+eclipse/
