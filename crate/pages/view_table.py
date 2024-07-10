@@ -6,13 +6,13 @@ import os
 from dash import dcc, html, Input, Output, callback, State, register_page
 
 if __name__ == '__main__':
-    from util.util import Preprocessing, DashUtil
+    from util.util import DashUtil
 else:
-    from pages.util.util import Preprocessing, DashUtil
+    from pages.util.util import  DashUtil
 
 register_page(__name__, suppress_callback_exceptions=True)
 
-class Table(DashUtil, Preprocessing):
+class Table(DashUtil):
 
   cfgPath = './vol/html_tables'
 
@@ -22,7 +22,7 @@ class Table(DashUtil, Preprocessing):
   def layout(self):
     return html.Div([
 
-      dcc.Interval(id='table_interval', interval=1*1000, n_intervals=0),  # Interval component for initial trigger
+      dcc.Interval(id='table_interval', interval=1*1000, n_intervals=0),
 
       dbc.Row([
         dbc.Col([
@@ -74,4 +74,3 @@ class Table(DashUtil, Preprocessing):
 x = Table()
 layout = x.layout()
 x.callbacks()
-
