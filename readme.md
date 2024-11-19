@@ -1,5 +1,5 @@
 # Basic implementation of a chemical process simulator using [Thermo](https://thermo.readthedocs.io/index.html#) and [ChemPy](https://bjodah.github.io/chempy/latest/)
-- Simulate chemical processes by writing a [config file](https://github.com/hunterviolette/24spring/blob/main/che_capstone/cfg.json)
+- Simulate chemical processes by writing a [config file](https://github.com/hunterviolette/24spring/blob/simulator/vol/configs/ammonia_electrosynthesis.json)
 
 ## Simulator Classes
 1. [balance.py](https://github.com/hunterviolette/24spring/blob/main/che_capstone/src/balance.py): Generate material balance to generate initial flow rates for basis components
